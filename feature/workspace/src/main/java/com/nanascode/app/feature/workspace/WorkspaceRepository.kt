@@ -194,7 +194,7 @@ class WorkspaceRepository @Inject constructor(
                 )
 
                 if (pushResult.isSuccess) {
-                    SecureLogger.i(TAG, "Proyek lokal $workspaceId berhasil dipublikasikan ke: $cloneUrl")
+                    SecureLogger.i(TAG, "Proyek lokal $workspaceId berhasil dipublikasikan ke: $targetCloneUrl")
                     emit(NetworkResult.Success(createdRepo))
                 } else {
                     val err = pushResult.exceptionOrNull()?.message ?: "Gagal melakukan push ke remote GitHub"
