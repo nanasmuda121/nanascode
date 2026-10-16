@@ -28,11 +28,24 @@ val Context.secureTokenDataStore: DataStore<Preferences> by preferencesDataStore
 class DataStoreTokenStorage @Inject constructor(
     @ApplicationContext private val context: Context,
     private val cipher: CryptoCipher,
-    private val dispatcherProvider: DispatcherProvider,
-    customDataStore: DataStore<Preferences>? = null
+    private val dispatcherProvider: DispatcherProvider
 ) : TokenManager {
 
-    private val dataStore: DataStore<Preferences> = customDataStore ?: context.secureTokenDataStore
+    // Secondary constructor untuk unit testing
+    constructor(
+        context: Context,
+        cipher: CryptoCipher,
+        dispatcherProvider: DispatcherProvider,
+        customDataStore: DataStore<Preferences>?
+    ) : this(context, cipher, dispatcherProvider) {
+        if (customDataStore != null) {
+            this.testDataStore = customDataStore
+        }
+    }
+
+    private var testDataStore: DataStore<Preferences>? = null
+    private val dataStore: DataStore<Preferences>
+        get() = testDataStore ?: context.secureTokenDataStore
     private val scope = CoroutineScope(SupervisorJob() + dispatcherProvider.io)
 
     private val _activeTokenFlow = MutableStateFlow<GitHubToken?>(null)

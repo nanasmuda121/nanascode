@@ -29,10 +29,23 @@ class WorkspaceRepository @Inject constructor(
     private val gitManager: GitManager,
     private val tokenManager: TokenManager,
     private val gitHubRepository: GitHubRepository,
-    private val dispatcherProvider: DispatcherProvider,
-    customBaseDir: File? = null
+    private val dispatcherProvider: DispatcherProvider
 ) {
-    private val workspacesDir: File = customBaseDir ?: File(context.filesDir, "workspaces").apply { mkdirs() }
+    // Secondary constructor untuk unit testing
+    constructor(
+        context: Context,
+        gitManager: GitManager,
+        tokenManager: TokenManager,
+        gitHubRepository: GitHubRepository,
+        dispatcherProvider: DispatcherProvider,
+        customBaseDir: File?
+    ) : this(context, gitManager, tokenManager, gitHubRepository, dispatcherProvider) {
+        this.customBaseDir = customBaseDir
+    }
+
+    internal var customBaseDir: File? = null
+    private val workspacesDir: File
+        get() = customBaseDir ?: File(context.filesDir, "workspaces").apply { mkdirs() }
 
     private val _workspacesFlow = MutableStateFlow<List<ProjectSource.LocalWorkspace>>(emptyList())
     val workspacesFlow: StateFlow<List<ProjectSource.LocalWorkspace>> = _workspacesFlow.asStateFlow()
