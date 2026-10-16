@@ -1,4 +1,4 @@
-package com.nanascode.app
+package com.nascode.nanas
 
 import android.content.Intent
 import android.net.Uri
@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
@@ -32,6 +33,7 @@ import com.nanascode.app.feature.workspace.WelcomeScreen
 import com.nanascode.app.feature.workspace.WorkspaceListScreen
 import com.nanascode.app.feature.workspace.WorkspaceViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -56,7 +58,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    NanasNavHost(
+                    NasNavHost(
                         onShowToast = { msg ->
                             Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
                         },
@@ -77,7 +79,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun NanasNavHost(
+fun NasNavHost(
     onShowToast: (String) -> Unit,
     onOpenSafFolder: () -> Unit,
     onStartForeground: (String) -> Unit,
@@ -139,16 +141,29 @@ fun NanasNavHost(
             )
         }
 
-        // Layar Manajemen Repositori GitHub
+        // Layar Manajemen Repositori GitHub & File Explorer
         composable("repos") {
             val repoViewModel: RepoViewModel = hiltViewModel()
+            val workspaceViewModel: WorkspaceViewModel = hiltViewModel()
+            val scope = rememberCoroutineScope()
+
             RepoListScreen(
                 viewModel = repoViewModel,
                 onNavigateBack = {
                     navController.popBackStack()
                 },
                 onSelectRepo = { repo ->
-                    onShowToast("Membuka repositori: ${repo.fullName}")
+                    onShowToast("Menyiapkan workspace untuk ${repo.name}...")
+                    scope.launch {
+                        val result = workspaceViewModel.cloneRemoteRepository(repo)
+                        result.onSuccess { ws ->
+                            onStartForeground(ws.name)
+                            val encoded = Uri.encode(ws.rootPath)
+                            navController.navigate("editor/${ws.name}/$encoded")
+                        }.onFailure { err ->
+                            onShowToast("Gagal menyiapkan repo: ${err.message}")
+                        }
+                    }
                 },
                 onNavigateToActions = { repo ->
                     if (repo.isPrivate) {

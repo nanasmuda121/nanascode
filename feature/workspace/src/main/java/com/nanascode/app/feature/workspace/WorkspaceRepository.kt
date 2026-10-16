@@ -226,6 +226,39 @@ class WorkspaceRepository @Inject constructor(
         }
     }
 
+    suspend fun cloneRemoteRepository(repo: GitHubRepo): Result<ProjectSource.LocalWorkspace> = withContext(dispatcherProvider.io) {
+        runCatching {
+            val id = "gh_" + repo.name.lowercase().replace("[^a-z0-9_]".toRegex(), "_")
+            val targetDir = File(workspacesDir, id)
+            if (!targetDir.exists()) {
+                targetDir.mkdirs()
+                val cloneUrl = repo.cloneUrl ?: "https://github.com/${repo.fullName}.git"
+                val token = tokenManager.getActiveToken()
+                gitManager.cloneRepository(
+                    cloneUrl = cloneUrl,
+                    destination = targetDir,
+                    credentials = token?.let { com.nanascode.app.core.git.GitCredentials.PersonalAccessToken(it.rawValue) }
+                )
+                File(targetDir, ".nanas_meta").writeText(repo.name)
+            }
+            val workspace = ProjectSource.LocalWorkspace(
+                id = id,
+                name = repo.name,
+                rootPath = targetDir.absolutePath,
+                lastModifiedAt = targetDir.lastModified(),
+                source = ProjectSource.GitHubRemote(
+                    repoId = repo.id,
+                    fullName = repo.fullName,
+                    cloneUrl = repo.cloneUrl ?: "",
+                    defaultBranch = repo.defaultBranch ?: "main",
+                    isPrivate = repo.isPrivate
+                )
+            )
+            refreshWorkspaces()
+            workspace
+        }
+    }
+
     companion object {
         private const val TAG = "WorkspaceRepository"
     }

@@ -227,4 +227,207 @@ class RepoViewModel @Inject constructor(
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
     }
+
+    fun openRepoExplorer(repo: com.nanascode.app.core.model.GitHubRepo) {
+        val defaultBranch = repo.defaultBranch?.takeIf { it.isNotBlank() } ?: "main"
+        _uiState.update {
+            it.copy(
+                explorerState = RepoExplorerState(
+                    isOpen = true,
+                    repo = repo,
+                    selectedBranch = defaultBranch,
+                    currentPath = "",
+                    isLoadingBranches = true,
+                    isLoadingContents = true,
+                    isRepoEmpty = false,
+                    errorMessage = null
+                )
+            )
+        }
+
+        val owner = repo.owner?.login?.takeIf { it.isNotBlank() }
+            ?: repo.fullName.split("/").firstOrNull()
+            ?: getActiveUsername()
+            ?: ""
+
+        loadBranches(owner, repo.name, defaultBranch)
+        loadContents(owner, repo.name, path = "", branch = defaultBranch)
+    }
+
+    fun selectBranch(branch: String) {
+        val current = _uiState.value.explorerState
+        val repo = current.repo ?: return
+        val owner = repo.owner?.login?.takeIf { it.isNotBlank() }
+            ?: repo.fullName.split("/").firstOrNull() ?: ""
+
+        _uiState.update {
+            it.copy(
+                explorerState = current.copy(
+                    selectedBranch = branch,
+                    currentPath = "",
+                    isLoadingContents = true,
+                    errorMessage = null,
+                    isRepoEmpty = false
+                )
+            )
+        }
+
+        loadContents(owner, repo.name, path = "", branch = branch)
+    }
+
+    fun navigateToFolder(path: String) {
+        val current = _uiState.value.explorerState
+        val repo = current.repo ?: return
+        val owner = repo.owner?.login?.takeIf { it.isNotBlank() }
+            ?: repo.fullName.split("/").firstOrNull() ?: ""
+
+        _uiState.update {
+            it.copy(
+                explorerState = current.copy(
+                    currentPath = path,
+                    isLoadingContents = true,
+                    errorMessage = null
+                )
+            )
+        }
+
+        loadContents(owner, repo.name, path = path, branch = current.selectedBranch)
+    }
+
+    fun navigateUp() {
+        val current = _uiState.value.explorerState
+        if (current.currentPath.isBlank()) return
+        val segments = current.pathSegments
+        val parentPath = if (segments.size <= 1) "" else segments.dropLast(1).joinToString("/")
+        navigateToFolder(parentPath)
+    }
+
+    fun refreshCurrentFolder() {
+        val current = _uiState.value.explorerState
+        val repo = current.repo ?: return
+        val owner = repo.owner?.login?.takeIf { it.isNotBlank() }
+            ?: repo.fullName.split("/").firstOrNull() ?: ""
+        loadContents(owner, repo.name, current.currentPath, current.selectedBranch)
+    }
+
+    fun closeRepoExplorer() {
+        _uiState.update {
+            it.copy(explorerState = it.explorerState.copy(isOpen = false))
+        }
+    }
+
+    private fun loadBranches(owner: String, repoName: String, currentBranch: String) {
+        viewModelScope.launch {
+            when (val result = gitHubRepository.getBranches(owner, repoName)) {
+                is NetworkResult.Success -> {
+                    val branchList = result.data
+                    val activeBranch = if (branchList.any { it.name == currentBranch }) {
+                        currentBranch
+                    } else {
+                        branchList.firstOrNull()?.name ?: currentBranch
+                    }
+                    _uiState.update {
+                        it.copy(
+                            explorerState = it.explorerState.copy(
+                                branches = branchList,
+                                selectedBranch = activeBranch,
+                                isLoadingBranches = false
+                            )
+                        )
+                    }
+                }
+                is NetworkResult.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            explorerState = it.explorerState.copy(
+                                isLoadingBranches = false,
+                                isRepoEmpty = result.code == 409 || result.code == 404,
+                                errorMessage = if (result.code == 409 || result.code == 404) null else result.message
+                            )
+                        )
+                    }
+                }
+                is NetworkResult.Unauthorized -> {
+                    _uiState.update {
+                        it.copy(
+                            explorerState = it.explorerState.copy(
+                                isLoadingBranches = false,
+                                errorMessage = "HTTP 401: Token tidak valid atau kedaluwarsa"
+                            )
+                        )
+                    }
+                }
+                is NetworkResult.NetworkUnavailable -> {
+                    _uiState.update {
+                        it.copy(
+                            explorerState = it.explorerState.copy(
+                                isLoadingBranches = false,
+                                errorMessage = "Koneksi terputus. Periksa jaringan Anda."
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun loadContents(owner: String, repoName: String, path: String, branch: String) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(explorerState = it.explorerState.copy(isLoadingContents = true, errorMessage = null))
+            }
+            when (val result = gitHubRepository.getContents(owner, repoName, path, branch)) {
+                is NetworkResult.Success -> {
+                    val sorted = result.data.sortedWith(
+                        compareByDescending<com.nanascode.app.core.model.GitHubContentItem> { it.isDirectory }
+                            .thenBy { it.name.lowercase() }
+                    )
+                    _uiState.update {
+                        it.copy(
+                            explorerState = it.explorerState.copy(
+                                contents = sorted,
+                                isLoadingContents = false,
+                                isRepoEmpty = sorted.isEmpty() && path.isEmpty(),
+                                errorMessage = null
+                            )
+                        )
+                    }
+                }
+                is NetworkResult.Error -> {
+                    val isEmptyRepo = result.code == 409 ||
+                            result.message.contains("empty", ignoreCase = true) ||
+                            (result.code == 404 && path.isEmpty())
+                    _uiState.update {
+                        it.copy(
+                            explorerState = it.explorerState.copy(
+                                isLoadingContents = false,
+                                isRepoEmpty = isEmptyRepo,
+                                errorMessage = if (isEmptyRepo) null else result.message
+                            )
+                        )
+                    }
+                }
+                is NetworkResult.Unauthorized -> {
+                    _uiState.update {
+                        it.copy(
+                            explorerState = it.explorerState.copy(
+                                isLoadingContents = false,
+                                errorMessage = "HTTP 401: Token tidak valid atau kedaluwarsa"
+                            )
+                        )
+                    }
+                }
+                is NetworkResult.NetworkUnavailable -> {
+                    _uiState.update {
+                        it.copy(
+                            explorerState = it.explorerState.copy(
+                                isLoadingContents = false,
+                                errorMessage = "Koneksi terputus. Periksa koneksi internet Anda."
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
 }

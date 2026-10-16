@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>NanasCode Mobile Editor</title>
+  <title>NanasCode Editor</title>
   <style>
     * {
       box-sizing: border-box;
@@ -14,25 +14,25 @@
     html, body {
       width: 100%;
       height: 100%;
-      background-color: #1E1E1E;
+      background-color: #121212;
       color: #D4D4D4;
-      font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
       font-size: 14px;
       overflow: hidden;
     }
-    #editor-container {
+    #editor-layout {
       width: 100%;
       height: 100%;
       display: flex;
       flex-direction: row;
-      background: #1E1E1E;
+      background: #121212;
     }
-    #line-numbers {
-      width: 48px;
+    #gutter {
+      width: 44px;
       padding: 12px 6px;
-      background-color: #1E1E1E;
-      border-right: 1px solid #2D2D2D;
-      color: #6E7681;
+      background-color: #121212;
+      border-right: 1px solid #222222;
+      color: #555555;
       text-align: right;
       font-size: 13px;
       line-height: 22px;
@@ -40,65 +40,183 @@
       overflow: hidden;
       white-space: pre;
     }
-    #textarea-wrapper {
+    #editor-viewport {
       flex: 1;
       height: 100%;
       position: relative;
+      overflow: hidden;
     }
-    #code-editor {
+    #highlighting, #editing {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       padding: 12px 14px;
-      background: transparent;
-      color: #E6EDF3;
-      border: none;
-      outline: none;
-      resize: none;
+      border: 0;
       font-family: inherit;
       font-size: 14px;
       line-height: 22px;
       tab-size: 2;
       white-space: pre;
+      word-wrap: normal;
       overflow: auto;
-      caret-color: #F5C518;
     }
-    /* Syntax token colors */
-    .keyword { color: #FF7B72; font-weight: bold; }
-    .string { color: #A5D6FF; }
-    .comment { color: #8B949E; font-style: italic; }
-    .function { color: #D2A8FF; }
-    .number { color: #79C0FF; }
+    /* Syntax Highlight Layer underneath */
+    #highlighting {
+      z-index: 1;
+      pointer-events: none;
+      background: transparent;
+      color: #E0E0E0;
+    }
+    #highlighting code {
+      font-family: inherit;
+      font-size: inherit;
+      line-height: inherit;
+    }
+    /* Transparent Editing Textarea on top */
+    #editing {
+      z-index: 2;
+      color: transparent;
+      background: transparent;
+      caret-color: #FFFFFF;
+      outline: none;
+      resize: none;
+    }
+    #editing::selection {
+      background: #264F78;
+      color: transparent;
+    }
+
+    /* Standard Colorful Code Block Syntax Theme (VS Code Dark+) */
+    .token-comment  { color: #6A9955; font-style: italic; }
+    .token-string   { color: #CE9178; }
+    .token-keyword  { color: #569CD6; font-weight: bold; }
+    .token-control  { color: #C586C0; font-weight: bold; }
+    .token-number   { color: #B5CEA8; }
+    .token-boolean  { color: #569CD6; }
+    .token-function { color: #DCDCAA; }
+    .token-type     { color: #4EC9B0; }
+    .token-property { color: #9CDCFE; }
+    .token-tag      { color: #569CD6; }
+    .token-attr     { color: #9CDCFE; }
+    .token-operator { color: #D4D4D4; }
+    .token-symbol   { color: #E0E0E0; }
   </style>
 </head>
 <body>
-  <div id="editor-container">
-    <div id="line-numbers">1</div>
-    <div id="textarea-wrapper">
-      <textarea id="code-editor" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+  <div id="editor-layout">
+    <div id="gutter">1</div>
+    <div id="editor-viewport">
+      <pre id="highlighting" aria-hidden="true"><code id="highlighting-content"></code></pre>
+      <textarea id="editing" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="// Ketik kode Anda di sini..."></textarea>
     </div>
   </div>
 
   <script>
     (function() {
-      const editor = document.getElementById('code-editor');
-      const lineNumbers = document.getElementById('line-numbers');
+      const editing = document.getElementById('editing');
+      const highlighting = document.getElementById('highlighting-content');
+      const gutter = document.getElementById('gutter');
 
-      let currentLang = 'javascript';
-      let isUpdatingInternally = false;
+      let currentLanguage = 'javascript';
+      let isProgrammaticChange = false;
       const historyStack = [];
       let historyIndex = -1;
 
-      function updateLineNumbers() {
-        const lines = editor.value.split('\n').length;
-        let numHtml = '';
-        for (let i = 1; i <= lines; i++) {
-          numHtml += i + '\n';
+      // Escape HTML
+      function escapeHtml(text) {
+        return text
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      // Syntax Highlighter Tokenizer (Standard Code Block Coloring)
+      function highlightCode(code, lang) {
+        if (!code) return '';
+
+        // Token definitions
+        const controlKeywords = /^(if|else|for|while|do|switch|case|break|continue|return|try|catch|finally|throw|yield|await|import|export|from|as)$/;
+        const generalKeywords = /^(const|let|var|function|class|extends|new|this|super|type|interface|enum|implements|package|private|protected|public|static|val|fun|def|self|lambda|print|null|undefined|nil|typeof|instanceof|void|delete|in|of)$/;
+        const booleans = /^(true|false)$/;
+
+        // Match tokens: Strings, Comments, Numbers, Words, Operators
+        const tokenRegex = /(\/\/[^\n]*|\/\*[\s\S]*?\*\/|#[^\n]*)|("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`)|(\b\d+(?:\.\d+)?\b)|(\b[a-zA-Z_$][a-zA-Z0-9_$]*\b)|(&lt;\/?[a-zA-Z0-9\-]+|&gt;)|(\s+|[^\s\w])/g;
+
+        let escaped = escapeHtml(code);
+        let result = '';
+        let lastIndex = 0;
+        let match;
+
+        while ((match = tokenRegex.exec(escaped)) !== null) {
+          const [full, comment, string, number, word, tag, other] = match;
+
+          if (comment) {
+            result += `<span class="token-comment">${comment}</span>`;
+          } else if (string) {
+            result += `<span class="token-string">${string}</span>`;
+          } else if (number) {
+            result += `<span class="token-number">${number}</span>`;
+          } else if (word) {
+            if (controlKeywords.test(word)) {
+              result += `<span class="token-control">${word}</span>`;
+            } else if (generalKeywords.test(word)) {
+              result += `<span class="token-keyword">${word}</span>`;
+            } else if (booleans.test(word)) {
+              result += `<span class="token-boolean">${word}</span>`;
+            } else if (escaped.substr(tokenRegex.lastIndex, 10).trim().startsWith('(')) {
+              result += `<span class="token-function">${word}</span>`;
+            } else if (/^[A-Z][a-zA-Z0-9_$]*$/.test(word)) {
+              result += `<span class="token-type">${word}</span>`;
+            } else {
+              result += `<span class="token-property">${word}</span>`;
+            }
+          } else if (tag) {
+            result += `<span class="token-tag">${tag}</span>`;
+          } else {
+            result += other;
+          }
         }
-        lineNumbers.textContent = numHtml;
+
+        // Add trailing newline if ends with \n so pre doesn't collapse
+        if (code.endsWith('\n')) {
+          result += ' ';
+        }
+
+        return result;
+      }
+
+      function updateEditor() {
+        const text = editing.value;
+        highlighting.innerHTML = highlightCode(text, currentLanguage);
+
+        // Update gutter line numbers
+        const lines = text.split('\n').length;
+        let gutterText = '';
+        for (let i = 1; i <= lines; i++) {
+          gutterText += i + '\n';
+        }
+        gutter.textContent = gutterText;
+
+        notifyCursorPosition();
       }
 
       function syncScroll() {
-        lineNumbers.scrollTop = editor.scrollTop;
+        document.getElementById('highlighting').scrollTop = editing.scrollTop;
+        document.getElementById('highlighting').scrollLeft = editing.scrollLeft;
+        gutter.scrollTop = editing.scrollTop;
+      }
+
+      function notifyCursorPosition() {
+        if (!window.AndroidBridge) return;
+        const text = editing.value.substring(0, editing.selectionStart);
+        const lines = text.split('\n');
+        const line = lines.length;
+        const col = lines[lines.length - 1].length + 1;
+        window.AndroidBridge.onCursorMoved(line, col);
       }
 
       function saveHistory(val) {
@@ -110,107 +228,89 @@
         historyIndex = historyStack.length - 1;
       }
 
-      editor.addEventListener('input', function() {
-        updateLineNumbers();
-        saveHistory(editor.value);
-        if (window.AndroidBridge && !isUpdatingInternally) {
-          window.AndroidBridge.onContentChanged(editor.value);
+      // Event Listeners
+      editing.addEventListener('input', function() {
+        updateEditor();
+        syncScroll();
+        saveHistory(editing.value);
+        if (window.AndroidBridge && !isProgrammaticChange) {
+          window.AndroidBridge.onContentChanged(editing.value);
         }
       });
 
-      editor.addEventListener('scroll', syncScroll);
+      editing.addEventListener('scroll', syncScroll);
+      editing.addEventListener('keyup', notifyCursorPosition);
+      editing.addEventListener('click', notifyCursorPosition);
 
-      editor.addEventListener('keyup', reportCursor);
-      editor.addEventListener('click', reportCursor);
-
-      function reportCursor() {
-        const textBefore = editor.value.substring(0, editor.selectionStart);
-        const lines = textBefore.split('\n');
-        const line = lines.length;
-        const col = lines[lines.length - 1].length + 1;
-        if (window.AndroidBridge) {
-          window.AndroidBridge.onCursorMoved(line, col);
-        }
-      }
-
-      // Exposed API functions for Kotlin
+      // Public API invoked from Android Kotlin
       window.setEditorContent = function(content, lang) {
-        isUpdatingInternally = true;
-        editor.value = content || '';
-        currentLang = lang || 'text';
-        updateLineNumbers();
+        isProgrammaticChange = true;
+        currentLanguage = lang || currentLanguage;
+        editing.value = content || '';
         historyStack.length = 0;
-        historyStack.push(editor.value);
-        historyIndex = 0;
-        isUpdatingInternally = false;
+        saveHistory(editing.value);
+        updateEditor();
+        syncScroll();
+        isProgrammaticChange = false;
       };
 
       window.getEditorContent = function() {
-        return editor.value;
+        return editing.value;
       };
 
       window.insertSymbol = function(symbol) {
-        const start = editor.selectionStart;
-        const end = editor.selectionEnd;
-        const val = editor.value;
+        const start = editing.selectionStart;
+        const end = editing.selectionEnd;
+        const val = editing.value;
 
         if (symbol === 'Tab') {
-          symbol = '  '; // 2 spaces
+          symbol = '  '; // 2 spasi
         }
 
-        editor.value = val.substring(0, start) + symbol + val.substring(end);
-        editor.selectionStart = editor.selectionEnd = start + symbol.length;
-        editor.focus();
-        updateLineNumbers();
-        saveHistory(editor.value);
+        editing.value = val.substring(0, start) + symbol + val.substring(end);
+        editing.selectionStart = editing.selectionEnd = start + symbol.length;
+        editing.focus();
+        updateEditor();
+        syncScroll();
+        saveHistory(editing.value);
 
         if (window.AndroidBridge) {
-          window.AndroidBridge.onContentChanged(editor.value);
+          window.AndroidBridge.onContentChanged(editing.value);
         }
-        reportCursor();
       };
 
       window.undo = function() {
         if (historyIndex > 0) {
           historyIndex--;
-          isUpdatingInternally = true;
-          editor.value = historyStack[historyIndex];
-          updateLineNumbers();
-          isUpdatingInternally = false;
-          if (window.AndroidBridge) {
-            window.AndroidBridge.onContentChanged(editor.value);
-          }
+          isProgrammaticChange = true;
+          editing.value = historyStack[historyIndex];
+          updateEditor();
+          syncScroll();
+          if (window.AndroidBridge) window.AndroidBridge.onContentChanged(editing.value);
+          isProgrammaticChange = false;
         }
       };
 
       window.redo = function() {
         if (historyIndex < historyStack.length - 1) {
           historyIndex++;
-          isUpdatingInternally = true;
-          editor.value = historyStack[historyIndex];
-          updateLineNumbers();
-          isUpdatingInternally = false;
-          if (window.AndroidBridge) {
-            window.AndroidBridge.onContentChanged(editor.value);
-          }
+          isProgrammaticChange = true;
+          editing.value = historyStack[historyIndex];
+          updateEditor();
+          syncScroll();
+          if (window.AndroidBridge) window.AndroidBridge.onContentChanged(editing.value);
+          isProgrammaticChange = false;
         }
       };
 
-      window.setFontSize = function(sizePx) {
-        editor.style.fontSize = sizePx + 'px';
-        lineNumbers.style.fontSize = (sizePx - 1) + 'px';
-        lineNumbers.style.lineHeight = (sizePx * 1.57) + 'px';
-        editor.style.lineHeight = (sizePx * 1.57) + 'px';
-      };
-
-      // Notify Kotlin that editor is ready
-      window.onload = function() {
-        updateLineNumbers();
-        saveHistory(editor.value);
+      // Notify Android that editor is ready
+      document.addEventListener('DOMContentLoaded', function() {
+        saveHistory('');
+        updateEditor();
         if (window.AndroidBridge) {
           window.AndroidBridge.onEditorReady();
         }
-      };
+      });
     })();
   </script>
 </body>

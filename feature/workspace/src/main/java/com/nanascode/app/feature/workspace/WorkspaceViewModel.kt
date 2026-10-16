@@ -110,4 +110,8 @@ class WorkspaceViewModel @Inject constructor(
             loadWorkspaces()
         }
     }
+
+    suspend fun cloneRemoteRepository(repo: com.nanascode.app.core.model.GitHubRepo): Result<com.nanascode.app.core.model.ProjectSource.LocalWorkspace> {
+        return workspaceRepository.cloneRemoteRepository(repo)
+    }
 }

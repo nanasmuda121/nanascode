@@ -24,4 +24,11 @@ interface GitHubRepository {
     ): NetworkResult<List<GitHubRepo>>
     suspend fun createRepository(request: CreateRepoRequest): NetworkResult<GitHubRepo>
     suspend fun refreshRateLimit(): NetworkResult<RateLimitInfo>
+    suspend fun getBranches(owner: String, repo: String): NetworkResult<List<com.nanascode.app.core.model.GitHubBranch>>
+    suspend fun getContents(
+        owner: String,
+        repo: String,
+        path: String = "",
+        ref: String? = null
+    ): NetworkResult<List<com.nanascode.app.core.model.GitHubContentItem>>
 }

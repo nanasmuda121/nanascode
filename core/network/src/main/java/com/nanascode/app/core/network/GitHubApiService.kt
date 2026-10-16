@@ -34,6 +34,30 @@ interface GitHubApiService {
 
     @GET("rate_limit")
     suspend fun getRateLimit(): Response<RateLimitResponse>
+
+    @GET("repos/{owner}/{repo}/branches")
+    suspend fun getBranches(
+        @retrofit2.http.Path("owner") owner: String,
+        @retrofit2.http.Path("repo") repo: String,
+        @Header("Authorization") authHeader: String? = null
+    ): Response<List<com.nanascode.app.core.model.GitHubBranch>>
+
+    @GET("repos/{owner}/{repo}/contents")
+    suspend fun getRootContents(
+        @retrofit2.http.Path("owner") owner: String,
+        @retrofit2.http.Path("repo") repo: String,
+        @Query("ref") ref: String? = null,
+        @Header("Authorization") authHeader: String? = null
+    ): Response<List<com.nanascode.app.core.model.GitHubContentItem>>
+
+    @GET("repos/{owner}/{repo}/contents/{path}")
+    suspend fun getPathContents(
+        @retrofit2.http.Path("owner") owner: String,
+        @retrofit2.http.Path("repo") repo: String,
+        @retrofit2.http.Path(value = "path", encoded = true) path: String,
+        @Query("ref") ref: String? = null,
+        @Header("Authorization") authHeader: String? = null
+    ): Response<List<com.nanascode.app.core.model.GitHubContentItem>>
 }
 
 @kotlinx.serialization.Serializable

@@ -14,7 +14,8 @@ data class RepoListState(
     val activeSort: RepoSortType = RepoSortType.UPDATED,
     val errorMessage: String? = null,
     val rateLimitInfo: RateLimitInfo? = null,
-    val isCreateSuccess: Boolean = false
+    val isCreateSuccess: Boolean = false,
+    val explorerState: RepoExplorerState = RepoExplorerState()
 ) {
     val filteredRepos: List<GitHubRepo>
         get() {

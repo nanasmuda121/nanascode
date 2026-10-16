@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build:
-    name: Build & Test NanasCode
+    name: Build & Test NasCode
     runs-on: ubuntu-latest
 
     steps:
@@ -36,11 +36,57 @@ jobs:
           fi
           chmod +x gradlew
 
+      - name: Decode Signing Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > /tmp/nanascode-release.jks
+
       - name: Run Unit Tests
-        run: ./gradlew testStandaloneDebugUnitTest --continue
+        run: ./gradlew testDebugUnitTest testStandaloneDebugUnitTest --continue
+
+      - name: Generate Test Summary
+        if: always()
+        run: |
+          python3 -c "
+          import glob, xml.etree.ElementTree as ET, os
+
+          total = 0
+          failures = 0
+          errors = 0
+          skipped = 0
+
+          for f in glob.glob('**/test-results/**/*.xml', recursive=True):
+              try:
+                  tree = ET.parse(f)
+                  root = tree.getroot()
+                  total += int(root.attrib.get('tests', 0))
+                  failures += int(root.attrib.get('failures', 0))
+                  errors += int(root.attrib.get('errors', 0))
+                  skipped += int(root.attrib.get('skipped', 0))
+              except Exception:
+                  pass
+
+          passed = total - failures - errors - skipped
+          summary = f'''### 🧪 Ringkasan Hasil Unit Test
+          | Status | Jumlah |
+          |---|---|
+          | 🟢 Lulus (Passed) | **{passed}** |
+          | 🔴 Gagal (Failed) | **{failures + errors}** |
+          | ⚪ Dilewati (Skipped) | **{skipped}** |
+          | 📊 Total Pengujian | **{total}** |
+          '''
+          print(summary)
+          summary_file = os.getenv('GITHUB_STEP_SUMMARY')
+          if summary_file:
+              with open(summary_file, 'a') as sf:
+                  sf.write(summary + '\n')
+          "
 
       - name: Build Release & Debug APKs
         env:
+          KEYSTORE_PATH: /tmp/nanascode-release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+UseG1GC"
         run: |
           ./gradlew assembleStandaloneRelease --stacktrace
@@ -49,14 +95,14 @@ jobs:
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: NanasCode-standalone-release-apk
+          name: NasCode-standalone-release-apk
           path: app/build/outputs/apk/standalone/release/app-standalone-release.apk
           retention-days: 30
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: NanasCode-standalone-debug-apk
+          name: NasCode-standalone-debug-apk
           path: app/build/outputs/apk/standalone/debug/app-standalone-debug.apk
           retention-days: 30
 
@@ -64,53 +110,54 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: unit-test-reports
-          path: "**/build/reports/tests/**"
+          name: test-results-and-reports
+          path: |
+            **/build/reports/tests/**
+            **/build/test-results/**
           retention-days: 7
 
       - name: Create or Update GitHub Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.2.0-alpha
-          name: "NanasCode v0.2.0-alpha (Milestone 2 - CodeMirror 6 Editor & Multi-Tab)"
+          tag_name: v0.2.0
+          name: "NasCode v0.2.0 (Official Release - com.nascode.nanas)"
           body: |
-            ### 🍍 NanasCode v0.2.0-alpha (Milestone 2: Code Editor & Multi-Tab)
-            Rilis resmi Milestone 2 dengan CodeMirror 6 Mobile Editor, Penjelajah File, Sistem Logout, dan Perbaikan Pembacaan Repositori!
+            ### 🍍 NasCode v0.2.0 (Official Release)
+            Rilis resmi **NasCode** dengan package name tetap `com.nascode.nanas`, tema monokrom modern, pewarnaan sintaks blok kode, signing certificate permanen, dan penjelajah file repositori remote!
 
-            #### ✨ Apa yang Baru di v0.2.0-alpha:
-            1. **Sistem Log Out Lengkap**:
-               - Menu akun profil di pojok kanan atas Workspace dan Repositori.
-               - Opsi keluar dari akun GitHub dengan dialog konfirmasi keamanan.
-               - Membersihkan token terenkripsi dari Keystore dan DataStore serta kembali ke mode lokal/tamu secara mulus.
-            2. **Perbaikan Pembacaan Repositori GitHub**:
-               - Memperbaiki deserialisasi JSON terhadap nilai `null` pada `default_branch` dan properti kosong repositori baru.
-               - Menghapus parameter `affiliation` berkonflik pada GitHub API `/user/repos`.
-               - Mengirim header `Authorization: Bearer` eksplisit sehingga repositori langsung dimuat tanpa kendala.
-            3. **CodeMirror 6 Touch-Friendly Mobile Editor**:
-               - Editor berbasis webview asset lokal berkecepatan tinggi dengan nomor baris dan tema gelap Acode (`#1E1E1E`).
-               - Toolbar simbol aksesori di atas keyboard virtual (`Tab`, `{}`, `[]`, `()`, `<`, `>`, `=`, `;`, `"`, `'`, `/`, `\`, `!`, `?`, `Undo`, `Redo`).
-               - Indikator baris dan kolom kursor (`Ln X, Col Y`).
-            4. **Multi-Tab File Manager**:
-               - Membuka banyak file sekaligus dalam deretan tab horizontal.
-               - Indikator titik kuning (`#F5C518`) untuk file yang belum tersimpan (*dirty flag*).
-               - Dialog konfirmasi perlindungan data saat menutup file yang memiliki perubahan belum disimpan.
-            5. **Penjelajah File Hirarkis (File Explorer Drawer)**:
-               - Drawer penjelajah file untuk menjelajahi seluruh folder workspace.
-               - Fitur buat file baru, buat folder baru, dan hapus file dengan ikon ekstensi lengkap.
-            6. **Live Web Preview**:
-               - Tombol Play untuk mempratinjau kode HTML, CSS, dan JavaScript secara instan di dalam aplikasi.
-            7. **Foreground Service (`specialUse`)**:
-               - Menjaga editor, terminal, dan server lokal tetap persisten di latar belakang sesuai standar Android 14+.
+            > ⚠️ **PENTING - MIGRASI PEMASANGAN SEKALI TERAKHIR**:
+            > Karena versi ini memperbarui Package Name menjadi `com.nascode.nanas` dan ditandatangani menggunakan **Keystore Sertifikat Permanen**, pengguna perlu **uninstall versi lama sekali terakhir**. Semua pembaruan APK berikutnya (baik debug maupun release) akan langsung menimpa tanpa perlu uninstall lagi.
+
+            #### ✨ Pembaruan & Fitur Utama di v0.2.0:
+            1. **Keystore Permanen & Auto Version Code (Prioritas Signing)**:
+               - Menggunakan keystore RSA-2048 permanen (berlaku hingga 2054) yang tersimpan aman di GitHub Secrets.
+               - Build Debug dan Release menggunakan keystore dan package ID (`com.nascode.nanas`) yang sama persis sehingga update menimpa tanpa konflik signature.
+               - `versionCode` naik otomatis di setiap build dari nomor run CI.
+            2. **Desain UI Monokrom & Blok Kode Berwarna**:
+               - Tampilan aplikasi mengusung tema gelap monokrom bersih (dark monochrome) tanpa warna kuning/hijau berlebih.
+               - Kode di dalam editor memiliki warna sintaks yang kaya dan hidup layaknya blok kode standar (VS Code Dark+ syntax theme).
+            3. **Buka Repositori dengan File Explorer & Branch Picker**:
+               - Membuka repositori langsung menampilkan struktur pohon berkas remote (`GET /repos/{o}/{r}/contents`) dan pemilih branch (`GET /repos/{o}/{r}/branches`).
+               - Menampilkan pesan error API asli (kode status HTTP + pesan detail server) alih-alih pesan generik.
+               - Menangani repositori kosong (HTTP 409/404) dengan status "Repo Kosong" yang informatif.
+               - Tombol aksi cepat untuk mengklon repo langsung ke workspace lokal dan membukanya di editor.
+            4. **Pemeriksaan Jenis Proyek pada Tombol Run**:
+               - Web HTML/CSS/JS: Tetap dijalankan di Live Web Preview.
+               - Node.js, Python, dan React/Vite: Tidak lagi memunculkan payload JSON mentah. Membuka panel terminal runner dengan perintah eksekusi yang sesuai dan integrasi localhost preview.
+            5. **Optimasi R8 & Ketahanan Rilis**:
+               - Aturan Proguard diperkuat untuk menjaga Hilt, Room, Kotlinx Serialization, JGit, dan WebView JS Interface.
+               - Smoke test start-up otomatis terverifikasi di CI.
+               - Ringkasan angka hasil pengujian (Lulus/Gagal/Dilewati) otomatis dihasilkan di CI summary.
 
             ---
-            #### 📥 Download Langsung:
-            - **[app-standalone-release.apk](https://github.com/nanasmuda121/nanascode/releases/download/v0.2.0-alpha/app-standalone-release.apk)** (Disarankan, Release teroptimasi R8)
-            - **[app-standalone-debug.apk](https://github.com/nanasmuda121/nanascode/releases/download/v0.2.0-alpha/app-standalone-debug.apk)** (Debug build)
+            #### 📥 Unduh Berkas APK:
+            - **[app-standalone-release.apk](https://github.com/nanasmuda121/nanascode/releases/download/v0.2.0/app-standalone-release.apk)** (Disarankan, teroptimasi R8 & ukuran paling ramping)
+            - **[app-standalone-debug.apk](https://github.com/nanasmuda121/nanascode/releases/download/v0.2.0/app-standalone-debug.apk)** (Debug build dengan signature yang sama)
           files: |
             app/build/outputs/apk/standalone/release/app-standalone-release.apk
             app/build/outputs/apk/standalone/debug/app-standalone-debug.apk
           draft: false
-          prerelease: true
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

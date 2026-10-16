@@ -7,14 +7,15 @@ plugins {
 }
 
 android {
-    namespace = "com.nanascode.app"
+    namespace = "com.nascode.nanas"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.nanascode.app"
+        applicationId = "com.nascode.nanas"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
+        val runNumber = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionCode = runNumber
         versionName = "1.0.0-beta01"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -24,6 +25,19 @@ android {
 
         ndk {
             abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
+        }
+    }
+
+    signingConfigs {
+        create("nanasRelease") {
+            val keystorePath = System.getenv("KEYSTORE_PATH") ?: "keystore.jks"
+            val keystoreFile = file(keystorePath)
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "nanascode_secure_keystore_pass_2026"
+                keyAlias = System.getenv("KEY_ALIAS") ?: "nanascode"
+                keyPassword = System.getenv("KEY_PASSWORD") ?: "nanascode_secure_keystore_pass_2026"
+            }
         }
     }
 
@@ -45,11 +59,19 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            val releaseSign = signingConfigs.findByName("nanasRelease")
+            if (releaseSign?.storeFile?.exists() == true) {
+                signingConfig = releaseSign
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
+            }
         }
         debug {
-            applicationIdSuffix = ".debug"
             isDebuggable = true
+            val releaseSign = signingConfigs.findByName("nanasRelease")
+            if (releaseSign?.storeFile?.exists() == true) {
+                signingConfig = releaseSign
+            }
         }
     }
 

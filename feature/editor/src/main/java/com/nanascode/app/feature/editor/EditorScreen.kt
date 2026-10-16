@@ -106,6 +106,9 @@ fun EditorScreen(
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     var isEditorReady by remember { mutableStateOf(false) }
     var showLivePreview by remember { mutableStateOf(false) }
+    var previewCustomUrl by remember { mutableStateOf<String?>(null) }
+    var showTerminalRunner by remember { mutableStateOf(false) }
+    var detectedProjectInfo by remember { mutableStateOf<Pair<ProjectType, String>?>(null) }
 
     val activeTab = remember(tabs, activeTabId) {
         tabs.find { it.id == activeTabId }
@@ -190,10 +193,23 @@ fun EditorScreen(
                     },
                     actions = {
                         IconButton(
-                            onClick = { showLivePreview = true },
+                            onClick = {
+                                val currentWorkspace = workspacePath?.let { java.io.File(it) }
+                                val currentActiveFile = activeTab?.path?.let { java.io.File(it) }
+                                if (currentWorkspace != null) {
+                                    val detected = ProjectTypeDetector.detect(currentWorkspace, currentActiveFile)
+                                    detectedProjectInfo = detected
+                                    if (detected.first == ProjectType.HTML_STATIC) {
+                                        previewCustomUrl = null
+                                        showLivePreview = true
+                                    } else {
+                                        showTerminalRunner = true
+                                    }
+                                }
+                            },
                             enabled = workspacePath != null
                         ) {
-                            Icon(imageVector = Icons.Default.PlayArrow, contentDescription = "Live Preview", tint = NanasGreen)
+                            Icon(imageVector = Icons.Default.PlayArrow, contentDescription = "Run Proyek", tint = NanasWhite)
                         }
                         IconButton(
                             onClick = viewModel::saveActiveFile,
@@ -422,7 +438,24 @@ fun EditorScreen(
         LivePreviewDialog(
             workspaceRoot = workspacePath!!,
             activeFilePath = activeTab?.path,
-            onDismiss = { showLivePreview = false }
+            previewUrl = previewCustomUrl,
+            onDismiss = {
+                showLivePreview = false
+                previewCustomUrl = null
+            }
+        )
+    }
+
+    // Dialog: Terminal Runner (Milestone 4 Preview)
+    if (showTerminalRunner && detectedProjectInfo != null) {
+        TerminalRunnerDialog(
+            projectType = detectedProjectInfo!!.first,
+            command = detectedProjectInfo!!.second,
+            onOpenLocalhostPreview = { url ->
+                previewCustomUrl = url
+                showLivePreview = true
+            },
+            onDismiss = { showTerminalRunner = false }
         )
     }
 

@@ -76,7 +76,7 @@ fun WelcomeScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "NanasCode",
+            text = "NasCode",
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             color = NanasYellow

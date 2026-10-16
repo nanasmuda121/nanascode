@@ -168,4 +168,58 @@ class GitHubRepositoryImpl @Inject constructor(
             NetworkResult.Error(message = e.localizedMessage ?: "Gagal koneksi")
         }
     }
+
+    override suspend fun getBranches(owner: String, repo: String): NetworkResult<List<com.nanascode.app.core.model.GitHubBranch>> {
+        return try {
+            val activeToken = tokenManager.getActiveToken()
+            val authHeader = activeToken?.let { "Bearer ${it.rawValue}" }
+            val response = apiService.getBranches(owner, repo, authHeader)
+            val code = response.code()
+            if (response.isSuccessful && response.body() != null) {
+                NetworkResult.Success(response.body()!!)
+            } else if (code == 401) {
+                NetworkResult.Unauthorized("HTTP 401: Sesi login tidak valid atau token kedaluwarsa")
+            } else {
+                val errorBody = response.errorBody()?.string()
+                val parsed = ApiErrorParser.parseErrorMessage(code, errorBody, response.message())
+                NetworkResult.Error(code, parsed)
+            }
+        } catch (e: IOException) {
+            NetworkResult.NetworkUnavailable
+        } catch (e: Exception) {
+            NetworkResult.Error(message = e.localizedMessage ?: "Gagal memuat branches")
+        }
+    }
+
+    override suspend fun getContents(
+        owner: String,
+        repo: String,
+        path: String,
+        ref: String?
+    ): NetworkResult<List<com.nanascode.app.core.model.GitHubContentItem>> {
+        return try {
+            val activeToken = tokenManager.getActiveToken()
+            val authHeader = activeToken?.let { "Bearer ${it.rawValue}" }
+            val cleanPath = path.trim().trim('/')
+            val response = if (cleanPath.isEmpty()) {
+                apiService.getRootContents(owner, repo, ref, authHeader)
+            } else {
+                apiService.getPathContents(owner, repo, cleanPath, ref, authHeader)
+            }
+            val code = response.code()
+            if (response.isSuccessful && response.body() != null) {
+                NetworkResult.Success(response.body()!!)
+            } else if (code == 401) {
+                NetworkResult.Unauthorized("HTTP 401: Sesi login tidak valid atau token kedaluwarsa")
+            } else {
+                val errorBody = response.errorBody()?.string()
+                val parsed = ApiErrorParser.parseErrorMessage(code, errorBody, response.message())
+                NetworkResult.Error(code, parsed)
+            }
+        } catch (e: IOException) {
+            NetworkResult.NetworkUnavailable
+        } catch (e: Exception) {
+            NetworkResult.Error(message = e.localizedMessage ?: "Gagal memuat isi berkas")
+        }
+    }
 }

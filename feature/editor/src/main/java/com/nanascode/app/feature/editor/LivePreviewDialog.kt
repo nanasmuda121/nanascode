@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
@@ -44,7 +43,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.nanascode.app.core.ui.theme.NanasDarkBg
 import com.nanascode.app.core.ui.theme.NanasDarkSurface
 import com.nanascode.app.core.ui.theme.NanasTextPrimary
-import com.nanascode.app.core.ui.theme.NanasYellow
+import com.nanascode.app.core.ui.theme.NanasTextSecondary
+import com.nanascode.app.core.ui.theme.NanasWhite
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,16 +53,26 @@ import java.io.File
 fun LivePreviewDialog(
     workspaceRoot: String,
     activeFilePath: String?,
+    previewUrl: String? = null,
     onDismiss: () -> Unit
 ) {
-    // Tentukan URL/File preview: Prioritaskan active file jika HTML, atau index.html di root
-    val previewFile = remember(workspaceRoot, activeFilePath) {
+    // Tentukan URL/File preview: Prioritaskan previewUrl jika ada (misal localhost),
+    // atau file HTML aktif, atau index.html di root workspace.
+    // JANGAN PERNAH me-load file non-HTML (seperti JSON/JS/Python) ke WebView.
+    val previewTarget = remember(workspaceRoot, activeFilePath, previewUrl) {
+        if (!previewUrl.isNullOrBlank()) {
+            return@remember previewUrl
+        }
         val active = activeFilePath?.let { File(it) }
-        if (active != null && active.exists() && (active.extension.lowercase() in listOf("html", "htm"))) {
-            active
+        if (active != null && active.exists() && active.extension.lowercase() in listOf("html", "htm")) {
+            "file://${active.absolutePath}"
         } else {
             val rootIndex = File(workspaceRoot, "index.html")
-            if (rootIndex.exists()) rootIndex else active
+            if (rootIndex.exists()) {
+                "file://${rootIndex.absolutePath}"
+            } else {
+                null
+            }
         }
     }
 
@@ -84,10 +94,10 @@ fun LivePreviewDialog(
                             Text(text = "🌐", fontSize = 16.sp)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Live Web Preview (${previewFile?.name ?: "No File"})",
+                                text = if (previewUrl != null) "Localhost Preview ($previewUrl)" else "Live Web Preview (HTML)",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 15.sp,
-                                color = NanasYellow
+                                color = NanasWhite
                             )
                         }
                     },
@@ -109,7 +119,7 @@ fun LivePreviewDialog(
                         .fillMaxSize()
                         .background(Color.White)
                 ) {
-                    if (previewFile != null && previewFile.exists()) {
+                    if (previewTarget != null) {
                         AndroidView(
                             factory = { ctx ->
                                 WebView(ctx).apply {
@@ -130,7 +140,7 @@ fun LivePreviewDialog(
                                     }
                                     webChromeClient = WebChromeClient()
 
-                                    loadUrl("file://${previewFile.absolutePath}")
+                                    loadUrl(previewTarget)
                                     webViewRef = this
                                 }
                             },
@@ -138,21 +148,36 @@ fun LivePreviewDialog(
                         )
                     } else {
                         Box(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(NanasDarkBg)
+                                .padding(24.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "Tidak ada file HTML (misal: index.html) di workspace untuk dijalankan.",
-                                color = Color.Gray,
-                                fontSize = 14.sp
-                            )
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(text = "🌐", fontSize = 42.sp)
+                                Spacer(modifier = Modifier.size(12.dp))
+                                Text(
+                                    text = "Tidak Ada Berkas Web HTML",
+                                    color = NanasWhite,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.size(6.dp))
+                                Text(
+                                    text = "Live preview hanya untuk proyek web HTML/CSS/JS. Berkas JSON/Script membutuhkan runtime terminal (Milestone 4).",
+                                    color = NanasTextSecondary,
+                                    fontSize = 13.sp,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
                         }
                     }
 
-                    if (isLoading && previewFile != null) {
+                    if (isLoading && previewTarget != null) {
                         CircularProgressIndicator(
                             modifier = Modifier.align(Alignment.Center).size(36.dp),
-                            color = NanasYellow
+                            color = Color.Black
                         )
                     }
                 }

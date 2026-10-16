@@ -347,7 +347,7 @@ fun RepoListScreen(
                         items(uiState.filteredRepos, key = { it.id }) { repo ->
                             RepoItemCard(
                                 repo = repo,
-                                onClick = { onSelectRepo(repo) },
+                                onClick = { viewModel.openRepoExplorer(repo) },
                                 onActionsClick = { onNavigateToActions(repo) }
                             )
                         }
@@ -404,6 +404,21 @@ fun RepoListScreen(
                 }
             },
             containerColor = NanasDarkSurface
+        )
+    }
+
+    if (uiState.explorerState.isOpen) {
+        RepoExplorerDialog(
+            state = uiState.explorerState,
+            onDismiss = viewModel::closeRepoExplorer,
+            onSelectBranch = viewModel::selectBranch,
+            onFolderClick = { folder -> viewModel.navigateToFolder(folder.path) },
+            onNavigateUp = viewModel::navigateUp,
+            onRefresh = viewModel::refreshCurrentFolder,
+            onCloneAndOpen = { repo ->
+                viewModel.closeRepoExplorer()
+                onSelectRepo(repo)
+            }
         )
     }
 }
