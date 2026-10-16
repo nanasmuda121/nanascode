@@ -462,9 +462,10 @@ fun UserProfileCard(
                         style = MaterialTheme.typography.bodyMedium,
                         color = NanasYellow
                     )
-                    if (!user.email.isNullOrBlank()) {
+                    val email = user.email
+                    if (!email.isNullOrBlank()) {
                         Text(
-                            text = user.email,
+                            text = email,
                             style = MaterialTheme.typography.bodySmall,
                             color = NanasTextSecondary
                         )
@@ -472,10 +473,11 @@ fun UserProfileCard(
                 }
             }
 
-            if (!user.bio.isNullOrBlank()) {
+            val bio = user.bio
+            if (!bio.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = user.bio,
+                    text = bio,
                     style = MaterialTheme.typography.bodySmall,
                     color = NanasTextSecondary
                 )
