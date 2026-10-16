@@ -12,6 +12,7 @@ data class GitHubRepo(
     @SerialName("private") val isPrivate: Boolean = false,
     @SerialName("fork") val isFork: Boolean = false,
     @SerialName("html_url") val htmlUrl: String? = null,
+    @SerialName("clone_url") val cloneUrl: String? = null,
     @SerialName("default_branch") val defaultBranch: String = "main",
     val language: String? = null,
     @SerialName("stargazers_count") val stargazersCount: Int = 0,

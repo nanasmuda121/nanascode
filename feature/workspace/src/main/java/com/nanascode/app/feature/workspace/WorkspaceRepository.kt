@@ -179,8 +179,8 @@ class WorkspaceRepository @Inject constructor(
         when (val createResult = gitHubRepository.createRepository(createRequest)) {
             is NetworkResult.Success -> {
                 val createdRepo = createResult.data
-                val cloneUrl = createdRepo.cloneUrl
-                if (cloneUrl.isNullOrBlank()) {
+                val targetCloneUrl = createdRepo.cloneUrl
+                if (targetCloneUrl.isNullOrBlank()) {
                     emit(NetworkResult.Error(message = "Gagal mendapatkan clone URL dari repositori yang baru dibuat"))
                     return@flow
                 }
@@ -188,7 +188,7 @@ class WorkspaceRepository @Inject constructor(
                 // 2. Set remote origin dan push branch lokal ke GitHub
                 val pushResult = gitManager.addRemoteAndPush(
                     directory = dir,
-                    remoteUrl = cloneUrl,
+                    remoteUrl = targetCloneUrl,
                     token = token.rawValue,
                     branch = "main"
                 )
