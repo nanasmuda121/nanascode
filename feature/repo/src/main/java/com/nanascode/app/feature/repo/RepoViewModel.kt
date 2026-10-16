@@ -2,7 +2,6 @@ package com.nanascode.app.feature.repo
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nanascode.app.core.common.DefaultDispatcherProvider
 import com.nanascode.app.core.common.DispatcherProvider
 import com.nanascode.app.core.database.RepoDao
 import com.nanascode.app.core.database.RepoEntity
@@ -11,6 +10,7 @@ import com.nanascode.app.core.model.NetworkResult
 import com.nanascode.app.core.model.RepoFilterType
 import com.nanascode.app.core.model.RepoSortType
 import com.nanascode.app.core.network.GitHubRepository
+import com.nanascode.app.core.security.TokenManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,17 +24,21 @@ import javax.inject.Inject
 class RepoViewModel @Inject constructor(
     private val gitHubRepository: GitHubRepository,
     private val repoDao: RepoDao,
-    private val dispatcherProvider: DispatcherProvider = DefaultDispatcherProvider()
+    private val tokenManager: TokenManager,
+    private val dispatcherProvider: DispatcherProvider
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RepoListState())
     val uiState: StateFlow<RepoListState> = _uiState.asStateFlow()
 
     val rateLimitFlow = gitHubRepository.rateLimitFlow
+    val activeToken = tokenManager.activeTokenFlow
 
     init {
         loadCachedRepos()
-        refreshRepos()
+        if (tokenManager.getActiveToken() != null) {
+            refreshRepos()
+        }
     }
 
     private fun loadCachedRepos() {
@@ -47,8 +51,31 @@ class RepoViewModel @Inject constructor(
         }
     }
 
+    fun getActiveUsername(): String? = tokenManager.getActiveUsername()
+
+    fun logout() {
+        viewModelScope.launch {
+            tokenManager.clearAll()
+            withContext(dispatcherProvider.io) {
+                repoDao.clearAll()
+            }
+            _uiState.update { it.copy(repos = emptyList(), errorMessage = null) }
+        }
+    }
+
     fun refreshRepos() {
         viewModelScope.launch {
+            val token = tokenManager.getActiveToken()
+            if (token == null) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "Silakan masuk dengan akun GitHub untuk melihat daftar repositori."
+                    )
+                }
+                return@launch
+            }
+
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
             when (val result = gitHubRepository.getUserRepositories(
@@ -74,7 +101,7 @@ class RepoViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = "Sesi login kedaluwarsa. Silakan login kembali."
+                            errorMessage = "Sesi login tidak valid atau token kedaluwarsa. Silakan masuk kembali."
                         )
                     }
                 }
@@ -106,14 +133,18 @@ class RepoViewModel @Inject constructor(
     fun setFilter(filter: RepoFilterType) {
         if (_uiState.value.activeFilter != filter) {
             _uiState.update { it.copy(activeFilter = filter) }
-            refreshRepos()
+            if (tokenManager.getActiveToken() != null) {
+                refreshRepos()
+            }
         }
     }
 
     fun setSort(sort: RepoSortType) {
         if (_uiState.value.activeSort != sort) {
             _uiState.update { it.copy(activeSort = sort) }
-            refreshRepos()
+            if (tokenManager.getActiveToken() != null) {
+                refreshRepos()
+            }
         }
     }
 
@@ -128,6 +159,12 @@ class RepoViewModel @Inject constructor(
         val trimmedName = name.trim()
         if (trimmedName.isBlank()) {
             _uiState.update { it.copy(errorMessage = "Nama repositori tidak boleh kosong") }
+            return
+        }
+
+        val token = tokenManager.getActiveToken()
+        if (token == null) {
+            _uiState.update { it.copy(errorMessage = "Login diperlukan untuk membuat repositori di GitHub.") }
             return
         }
 

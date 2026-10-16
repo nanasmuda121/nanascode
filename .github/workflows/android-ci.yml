@@ -68,34 +68,41 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.1.5-alpha
-          name: "NanasCode v0.1.5-alpha (Release APK)"
+          tag_name: v0.2.0-alpha
+          name: "NanasCode v0.2.0-alpha (Milestone 2 - CodeMirror 6 Editor & Multi-Tab)"
           body: |
-            ### 🍍 NanasCode v0.1.5-alpha (Milestone 1.5 Update)
-            Build APK Release terbaru dengan mode lokal offline-first dan enkripsi hardware Keystore!
+            ### 🍍 NanasCode v0.2.0-alpha (Milestone 2: Code Editor & Multi-Tab)
+            Rilis resmi Milestone 2 dengan CodeMirror 6 Mobile Editor, Penjelajah File, Sistem Logout, dan Perbaikan Pembacaan Repositori!
 
-            #### ✨ Apa yang Baru:
-            1. **Login GitHub Sekarang Opsional**:
-               - Layar awal menyediakan pilihan **"Lanjut Tanpa Login"** dan **"Masuk dengan GitHub"**.
-               - Koding, manajemen file, terminal, dan git commit offline dapat digunakan sepenuhnya tanpa akun GitHub.
-               - Login dapat dilakukan kapan saja nanti dari menu Pengaturan atau saat mempublikasikan proyek ke GitHub.
-            2. **Workspace Lokal & Project Templates**:
-               - Template bawaan: **HTML5 + Tailwind CSS v4**, **Node.js + Express API**, **React + Vite**, **Python CLI**, dan **Proyek Kosong**.
-               - Dukungan impor/ekspor folder eksternal via SAF (*Storage Access Framework*).
-               - Tombol **"Publikasikan ke GitHub"** untuk mengekspor proyek lokal ke repo GitHub baru.
-            3. **Android Keystore (AES-256-GCM) + DataStore**:
-               - Menggantikan *EncryptedSharedPreferences* dengan *Hardware-backed Keystore AES-GCM*.
-               - Ciphertext tersimpan aman di Preferences DataStore secara asinkron tanpa I/O blocking.
-            4. **Offline Git Engine (JGit)**:
-               - Inisialisasi git lokal (`git init`), commit (`git commit`), status, dan branch secara offline.
-               - Kloning repositori publik tanpa autentikasi (anonymous clone via JGit).
-            5. **Package Rename**: Migrasi bersih ke `com.nanascode.app`.
-            6. **Stack Update**: AGP 8.6.1, Kotlin 2.0.21, KSP 2.0.21-1.0.28, Hilt 2.52, Compose BOM 2024.10.00.
+            #### ✨ Apa yang Baru di v0.2.0-alpha:
+            1. **Sistem Log Out Lengkap**:
+               - Menu akun profil di pojok kanan atas Workspace dan Repositori.
+               - Opsi keluar dari akun GitHub dengan dialog konfirmasi keamanan.
+               - Membersihkan token terenkripsi dari Keystore dan DataStore serta kembali ke mode lokal/tamu secara mulus.
+            2. **Perbaikan Pembacaan Repositori GitHub**:
+               - Memperbaiki deserialisasi JSON terhadap nilai `null` pada `default_branch` dan properti kosong repositori baru.
+               - Menghapus parameter `affiliation` berkonflik pada GitHub API `/user/repos`.
+               - Mengirim header `Authorization: Bearer` eksplisit sehingga repositori langsung dimuat tanpa kendala.
+            3. **CodeMirror 6 Touch-Friendly Mobile Editor**:
+               - Editor berbasis webview asset lokal berkecepatan tinggi dengan nomor baris dan tema gelap Acode (`#1E1E1E`).
+               - Toolbar simbol aksesori di atas keyboard virtual (`Tab`, `{}`, `[]`, `()`, `<`, `>`, `=`, `;`, `"`, `'`, `/`, `\`, `!`, `?`, `Undo`, `Redo`).
+               - Indikator baris dan kolom kursor (`Ln X, Col Y`).
+            4. **Multi-Tab File Manager**:
+               - Membuka banyak file sekaligus dalam deretan tab horizontal.
+               - Indikator titik kuning (`#F5C518`) untuk file yang belum tersimpan (*dirty flag*).
+               - Dialog konfirmasi perlindungan data saat menutup file yang memiliki perubahan belum disimpan.
+            5. **Penjelajah File Hirarkis (File Explorer Drawer)**:
+               - Drawer penjelajah file untuk menjelajahi seluruh folder workspace.
+               - Fitur buat file baru, buat folder baru, dan hapus file dengan ikon ekstensi lengkap.
+            6. **Live Web Preview**:
+               - Tombol Play untuk mempratinjau kode HTML, CSS, dan JavaScript secara instan di dalam aplikasi.
+            7. **Foreground Service (`specialUse`)**:
+               - Menjaga editor, terminal, dan server lokal tetap persisten di latar belakang sesuai standar Android 14+.
 
             ---
             #### 📥 Download Langsung:
-            - **[app-standalone-release.apk](https://github.com/nanasmuda121/nanascode/releases/download/v0.1.5-alpha/app-standalone-release.apk)** (Disarankan, Release siap pakai)
-            - **[app-standalone-debug.apk](https://github.com/nanasmuda121/nanascode/releases/download/v0.1.5-alpha/app-standalone-debug.apk)** (Debug build)
+            - **[app-standalone-release.apk](https://github.com/nanasmuda121/nanascode/releases/download/v0.2.0-alpha/app-standalone-release.apk)** (Disarankan, Release teroptimasi R8)
+            - **[app-standalone-debug.apk](https://github.com/nanasmuda121/nanascode/releases/download/v0.2.0-alpha/app-standalone-debug.apk)** (Debug build)
           files: |
             app/build/outputs/apk/standalone/release/app-standalone-release.apk
             app/build/outputs/apk/standalone/debug/app-standalone-debug.apk

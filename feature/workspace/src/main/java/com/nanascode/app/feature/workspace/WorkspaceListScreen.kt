@@ -30,6 +30,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -85,6 +87,8 @@ fun WorkspaceListScreen(
     var showCreateDialog by remember { mutableStateOf(false) }
     var selectedWorkspaceForPublish by remember { mutableStateOf<ProjectSource.LocalWorkspace?>(null) }
     var workspaceToDelete by remember { mutableStateOf<ProjectSource.LocalWorkspace?>(null) }
+    var showAccountMenu by remember { mutableStateOf(false) }
+    var showLogoutConfirm by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -103,12 +107,53 @@ fun WorkspaceListScreen(
                 },
                 actions = {
                     if (activeToken != null) {
-                        IconButton(onClick = onNavigateToGitHubRepos) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Akun GitHub",
-                                tint = NanasYellow
-                            )
+                        Box {
+                            IconButton(onClick = { showAccountMenu = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "Akun GitHub",
+                                    tint = NanasYellow
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = showAccountMenu,
+                                onDismissRequest = { showAccountMenu = false },
+                                modifier = Modifier.background(NanasDarkSurface)
+                            ) {
+                                val user = viewModel.getActiveUsername() ?: "GitHub"
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = "@$user",
+                                            fontWeight = FontWeight.Bold,
+                                            color = NanasYellow,
+                                            fontSize = 13.sp
+                                        )
+                                    },
+                                    onClick = { }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Repositori GitHub", color = NanasTextPrimary) },
+                                    onClick = {
+                                        showAccountMenu = false
+                                        onNavigateToGitHubRepos()
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Ganti Akun", color = NanasTextPrimary) },
+                                    onClick = {
+                                        showAccountMenu = false
+                                        onNavigateToLogin()
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Keluar (Logout)", color = NanasError, fontWeight = FontWeight.SemiBold) },
+                                    onClick = {
+                                        showAccountMenu = false
+                                        showLogoutConfirm = true
+                                    }
+                                )
+                            }
                         }
                     } else {
                         OutlinedButton(
@@ -320,6 +365,43 @@ fun WorkspaceListScreen(
             },
             dismissButton = {
                 TextButton(onClick = { workspaceToDelete = null }) {
+                    Text(text = "Batal", color = NanasTextSecondary)
+                }
+            },
+            containerColor = NanasDarkSurface
+        )
+    }
+
+    // Dialog: Konfirmasi Logout
+    if (showLogoutConfirm) {
+        AlertDialog(
+            onDismissRequest = { showLogoutConfirm = false },
+            title = {
+                Text(
+                    text = "Keluar dari Akun GitHub?",
+                    fontWeight = FontWeight.Bold,
+                    color = NanasTextPrimary
+                )
+            },
+            text = {
+                Text(
+                    text = "Token kredensial Anda akan dihapus dari perangkat. Anda tetap dapat melanjutkan bekerja dalam mode offline/lokal.",
+                    color = NanasTextSecondary
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.logout()
+                        showLogoutConfirm = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = NanasError, contentColor = Color.White)
+                ) {
+                    Text(text = "Keluar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutConfirm = false }) {
                     Text(text = "Batal", color = NanasTextSecondary)
                 }
             },

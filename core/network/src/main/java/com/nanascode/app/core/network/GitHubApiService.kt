@@ -19,8 +19,9 @@ interface GitHubApiService {
 
     @GET("user/repos")
     suspend fun getUserRepositories(
-        @Query("visibility") visibility: String = "all",
-        @Query("affiliation") affiliation: String = "owner,collaborator,organization_member",
+        @Header("Authorization") authHeader: String? = null,
+        @Query("visibility") visibility: String? = null,
+        @Query("affiliation") affiliation: String? = null,
         @Query("sort") sort: String = "updated",
         @Query("per_page") perPage: Int = 100,
         @Query("page") page: Int = 1

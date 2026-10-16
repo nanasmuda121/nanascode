@@ -11,15 +11,21 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.nanascode.app.core.common.NanasForegroundService
 import com.nanascode.app.core.ui.theme.NanasCodeTheme
 import com.nanascode.app.core.ui.theme.NanasDarkBg
 import com.nanascode.app.feature.auth.AuthViewModel
 import com.nanascode.app.feature.auth.LoginScreen
+import com.nanascode.app.feature.editor.EditorScreen
+import com.nanascode.app.feature.editor.EditorViewModel
 import com.nanascode.app.feature.repo.RepoListScreen
 import com.nanascode.app.feature.repo.RepoViewModel
 import com.nanascode.app.feature.workspace.WelcomeScreen
@@ -56,6 +62,12 @@ class MainActivity : ComponentActivity() {
                         },
                         onOpenSafFolder = {
                             openDocumentTreeLauncher.launch(null)
+                        },
+                        onStartForeground = { name ->
+                            NanasForegroundService.start(this@MainActivity, name)
+                        },
+                        onStopForeground = {
+                            NanasForegroundService.stop(this@MainActivity)
                         }
                     )
                 }
@@ -67,7 +79,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun NanasNavHost(
     onShowToast: (String) -> Unit,
-    onOpenSafFolder: () -> Unit
+    onOpenSafFolder: () -> Unit,
+    onStartForeground: (String) -> Unit,
+    onStopForeground: () -> Unit
 ) {
     val navController = rememberNavController()
 
@@ -95,7 +109,9 @@ fun NanasNavHost(
             WorkspaceListScreen(
                 viewModel = workspaceViewModel,
                 onOpenWorkspace = { workspace ->
-                    onShowToast("Membuka editor untuk proyek lokal: ${workspace.name}")
+                    onStartForeground(workspace.name)
+                    val encoded = Uri.encode(workspace.rootPath)
+                    navController.navigate("editor/${workspace.name}/$encoded")
                 },
                 onNavigateToLogin = {
                     navController.navigate("auth")
@@ -116,6 +132,9 @@ fun NanasNavHost(
                     navController.navigate("workspaces") {
                         popUpTo("auth") { inclusive = true }
                     }
+                },
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }
@@ -129,7 +148,7 @@ fun NanasNavHost(
                     navController.popBackStack()
                 },
                 onSelectRepo = { repo ->
-                    onShowToast("Membuka editor untuk ${repo.fullName}")
+                    onShowToast("Membuka repositori: ${repo.fullName}")
                 },
                 onNavigateToActions = { repo ->
                     if (repo.isPrivate) {
@@ -137,6 +156,35 @@ fun NanasNavHost(
                     } else {
                         onShowToast("Membuka GitHub Actions untuk ${repo.fullName} (Fitur F6)")
                     }
+                },
+                onNavigateToLogin = {
+                    navController.navigate("auth")
+                }
+            )
+        }
+
+        // Layar Editor Koding Mobile (CodeMirror 6 WebView)
+        composable(
+            route = "editor/{workspaceName}/{rootPath}",
+            arguments = listOf(
+                navArgument("workspaceName") { type = NavType.StringType },
+                navArgument("rootPath") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val name = backStackEntry.arguments?.getString("workspaceName") ?: "Editor"
+            val encodedPath = backStackEntry.arguments?.getString("rootPath") ?: ""
+            val rootPath = Uri.decode(encodedPath)
+
+            val editorViewModel: EditorViewModel = hiltViewModel()
+            LaunchedEffect(rootPath) {
+                editorViewModel.initWorkspace(rootPath, name)
+            }
+
+            EditorScreen(
+                viewModel = editorViewModel,
+                onNavigateBack = {
+                    onStopForeground()
+                    navController.popBackStack()
                 }
             )
         }

@@ -24,37 +24,49 @@ class AndroidKeystoreCipher @Inject constructor() : CryptoCipher {
 
     private var fallbackKey: SecretKey? = null
 
+    @Synchronized
     private fun getOrCreateKey(): SecretKey {
+        fallbackKey?.let { return it }
+
         if (keyStore == null) {
-            if (fallbackKey == null) {
-                val keyGen = KeyGenerator.getInstance("AES")
-                keyGen.init(256)
-                fallbackKey = keyGen.generateKey()
+            val keyGen = KeyGenerator.getInstance("AES")
+            keyGen.init(256)
+            val generated = keyGen.generateKey()
+            fallbackKey = generated
+            return generated
+        }
+
+        try {
+            if (!keyStore.containsAlias(KEY_ALIAS)) {
+                val keyGenerator = KeyGenerator.getInstance(
+                    KeyProperties.KEY_ALGORITHM_AES,
+                    ANDROID_KEYSTORE
+                )
+                val parameterSpec = KeyGenParameterSpec.Builder(
+                    KEY_ALIAS,
+                    KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+                )
+                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                    .setKeySize(256)
+                    .build()
+
+                keyGenerator.init(parameterSpec)
+                return keyGenerator.generateKey()
             }
-            return fallbackKey!!
+
+            val key = (keyStore.getKey(KEY_ALIAS, null) as? SecretKey)
+                ?: (keyStore.getEntry(KEY_ALIAS, null) as? KeyStore.SecretKeyEntry)?.secretKey
+            if (key != null) return key
+        } catch (e: Exception) {
+            SecureLogger.w(TAG, "Gagal mengakses Android Keystore hardware key: ${e.message}. Menggunakan fallback.")
         }
 
-        if (!keyStore.containsAlias(KEY_ALIAS)) {
-            val keyGenerator = KeyGenerator.getInstance(
-                KeyProperties.KEY_ALGORITHM_AES,
-                ANDROID_KEYSTORE
-            )
-            val parameterSpec = KeyGenParameterSpec.Builder(
-                KEY_ALIAS,
-                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-            )
-                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                .setKeySize(256)
-                .build()
-
-            keyGenerator.init(parameterSpec)
-            return keyGenerator.generateKey()
-        }
-
-        val entry = keyStore.getEntry(KEY_ALIAS, null) as? KeyStore.SecretKeyEntry
-        return entry?.secretKey
-            ?: throw IllegalStateException("Kunci enkripsi tidak dapat dimuat dari Android Keystore")
+        val keyGen = KeyGenerator.getInstance("AES")
+        keyGen.init(256)
+        val generated = keyGen.generateKey()
+        fallbackKey = generated
+        return generated
     }
 
     override fun encrypt(plainText: String): String {

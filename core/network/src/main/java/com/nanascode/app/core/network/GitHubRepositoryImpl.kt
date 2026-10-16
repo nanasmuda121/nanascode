@@ -11,6 +11,7 @@ import com.nanascode.app.core.model.RateLimitInfo
 import com.nanascode.app.core.model.RepoFilterType
 import com.nanascode.app.core.model.RepoSortType
 import com.nanascode.app.core.model.ScopeCheckResult
+import com.nanascode.app.core.security.TokenManager
 import kotlinx.coroutines.flow.StateFlow
 import java.io.IOException
 import javax.inject.Inject
@@ -19,7 +20,8 @@ import javax.inject.Singleton
 @Singleton
 class GitHubRepositoryImpl @Inject constructor(
     private val apiService: GitHubApiService,
-    private val networkStateHolder: NetworkStateHolder
+    private val networkStateHolder: NetworkStateHolder,
+    private val tokenManager: TokenManager
 ) : GitHubRepository {
 
     override val rateLimitFlow: StateFlow<RateLimitInfo?> = networkStateHolder.rateLimitFlow
@@ -70,9 +72,15 @@ class GitHubRepositoryImpl @Inject constructor(
         sort: RepoSortType,
         page: Int
     ): NetworkResult<List<GitHubRepo>> {
+        val activeToken = tokenManager.getActiveToken()
+        if (activeToken == null) {
+            return NetworkResult.Unauthorized("Silakan masuk dengan token GitHub untuk melihat repositori.")
+        }
+
         return try {
+            val authHeader = "Bearer ${activeToken.rawValue}"
             val response = apiService.getUserRepositories(
-                visibility = "all",
+                authHeader = authHeader,
                 sort = sort.value,
                 perPage = 100,
                 page = page
@@ -96,24 +104,24 @@ class GitHubRepositoryImpl @Inject constructor(
                 }
                 NetworkResult.Success(filteredRepos, rateLimit)
             } else if (code == 401) {
-                NetworkResult.Unauthorized()
+                NetworkResult.Unauthorized("Sesi login tidak valid atau token kedaluwarsa. Silakan masuk kembali.")
             } else if (code == 403 || code == 429) {
                 val isRateLimited = rateLimit?.isExhausted == true
                 val msg = if (isRateLimited) {
                     "Rate limit tercapai. Reset pada ${rateLimit?.formattedResetTime()}."
                 } else {
-                    "Akses ditolak (HTTP 403)"
+                    "Akses repositori ditolak (HTTP 403)"
                 }
                 NetworkResult.Error(code, msg, isRateLimit = isRateLimited, rateLimitInfo = rateLimit)
             } else {
-                NetworkResult.Error(code, "Gagal mengambil daftar repositori: ${response.message()}")
+                NetworkResult.Error(code, "Gagal mengambil daftar repositori ($code): ${response.message()}")
             }
         } catch (e: IOException) {
             SecureLogger.e("Network", "Koneksi terputus saat mengambil repo", e)
             NetworkResult.NetworkUnavailable
         } catch (e: Exception) {
-            SecureLogger.e("Network", "Kesalahan saat memuat repositori", e)
-            NetworkResult.Error(message = e.localizedMessage ?: "Terjadi kesalahan")
+            SecureLogger.e("Network", "Kesalahan saat memuat repositori: ${e.message}", e)
+            NetworkResult.Error(message = e.localizedMessage ?: "Terjadi kesalahan saat memproses data repositori")
         }
     }
 

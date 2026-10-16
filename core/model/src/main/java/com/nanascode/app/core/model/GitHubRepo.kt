@@ -5,15 +5,15 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class GitHubRepo(
-    val id: Long,
-    val name: String,
-    @SerialName("full_name") val fullName: String,
+    val id: Long = 0L,
+    val name: String = "",
+    @SerialName("full_name") val fullName: String = "",
     val description: String? = null,
     @SerialName("private") val isPrivate: Boolean = false,
     @SerialName("fork") val isFork: Boolean = false,
     @SerialName("html_url") val htmlUrl: String? = null,
     @SerialName("clone_url") val cloneUrl: String? = null,
-    @SerialName("default_branch") val defaultBranch: String = "main",
+    @SerialName("default_branch") val defaultBranch: String? = "main",
     val language: String? = null,
     @SerialName("stargazers_count") val stargazersCount: Int = 0,
     @SerialName("forks_count") val forksCount: Int = 0,
@@ -25,7 +25,7 @@ data class GitHubRepo(
 
 @Serializable
 data class RepoOwner(
-    val id: Long,
-    val login: String,
+    val id: Long = 0L,
+    val login: String = "",
     @SerialName("avatar_url") val avatarUrl: String? = null
 )

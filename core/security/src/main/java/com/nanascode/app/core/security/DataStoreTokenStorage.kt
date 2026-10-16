@@ -97,8 +97,13 @@ class DataStoreTokenStorage @Inject constructor(
     }
 
     override fun getActiveToken(): GitHubToken? {
+        _activeTokenFlow.value?.let { return it }
         return runBlocking(dispatcherProvider.io) {
-            getActiveTokenInternal()
+            val token = getActiveTokenInternal()
+            if (token != null) {
+                _activeTokenFlow.value = token
+            }
+            token
         }
     }
 

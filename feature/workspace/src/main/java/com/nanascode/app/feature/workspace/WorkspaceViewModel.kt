@@ -99,4 +99,15 @@ class WorkspaceViewModel @Inject constructor(
     fun resetPublishState() {
         _publishState.value = PublishState.Idle
     }
+
+    fun getActiveUsername(): String? {
+        return tokenManager.getActiveUsername()
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            tokenManager.clearAll()
+            loadWorkspaces()
+        }
+    }
 }

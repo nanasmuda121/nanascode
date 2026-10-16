@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>NanasCode Mobile Editor</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: #1E1E1E;
+      color: #D4D4D4;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+      font-size: 14px;
+      overflow: hidden;
+    }
+    #editor-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: row;
+      background: #1E1E1E;
+    }
+    #line-numbers {
+      width: 48px;
+      padding: 12px 6px;
+      background-color: #1E1E1E;
+      border-right: 1px solid #2D2D2D;
+      color: #6E7681;
+      text-align: right;
+      font-size: 13px;
+      line-height: 22px;
+      user-select: none;
+      overflow: hidden;
+      white-space: pre;
+    }
+    #textarea-wrapper {
+      flex: 1;
+      height: 100%;
+      position: relative;
+    }
+    #code-editor {
+      width: 100%;
+      height: 100%;
+      padding: 12px 14px;
+      background: transparent;
+      color: #E6EDF3;
+      border: none;
+      outline: none;
+      resize: none;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 22px;
+      tab-size: 2;
+      white-space: pre;
+      overflow: auto;
+      caret-color: #F5C518;
+    }
+    /* Syntax token colors */
+    .keyword { color: #FF7B72; font-weight: bold; }
+    .string { color: #A5D6FF; }
+    .comment { color: #8B949E; font-style: italic; }
+    .function { color: #D2A8FF; }
+    .number { color: #79C0FF; }
+  </style>
+</head>
+<body>
+  <div id="editor-container">
+    <div id="line-numbers">1</div>
+    <div id="textarea-wrapper">
+      <textarea id="code-editor" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const editor = document.getElementById('code-editor');
+      const lineNumbers = document.getElementById('line-numbers');
+
+      let currentLang = 'javascript';
+      let isUpdatingInternally = false;
+      const historyStack = [];
+      let historyIndex = -1;
+
+      function updateLineNumbers() {
+        const lines = editor.value.split('\n').length;
+        let numHtml = '';
+        for (let i = 1; i <= lines; i++) {
+          numHtml += i + '\n';
+        }
+        lineNumbers.textContent = numHtml;
+      }
+
+      function syncScroll() {
+        lineNumbers.scrollTop = editor.scrollTop;
+      }
+
+      function saveHistory(val) {
+        if (historyIndex < historyStack.length - 1) {
+          historyStack.splice(historyIndex + 1);
+        }
+        historyStack.push(val);
+        if (historyStack.length > 50) historyStack.shift();
+        historyIndex = historyStack.length - 1;
+      }
+
+      editor.addEventListener('input', function() {
+        updateLineNumbers();
+        saveHistory(editor.value);
+        if (window.AndroidBridge && !isUpdatingInternally) {
+          window.AndroidBridge.onContentChanged(editor.value);
+        }
+      });
+
+      editor.addEventListener('scroll', syncScroll);
+
+      editor.addEventListener('keyup', reportCursor);
+      editor.addEventListener('click', reportCursor);
+
+      function reportCursor() {
+        const textBefore = editor.value.substring(0, editor.selectionStart);
+        const lines = textBefore.split('\n');
+        const line = lines.length;
+        const col = lines[lines.length - 1].length + 1;
+        if (window.AndroidBridge) {
+          window.AndroidBridge.onCursorMoved(line, col);
+        }
+      }
+
+      // Exposed API functions for Kotlin
+      window.setEditorContent = function(content, lang) {
+        isUpdatingInternally = true;
+        editor.value = content || '';
+        currentLang = lang || 'text';
+        updateLineNumbers();
+        historyStack.length = 0;
+        historyStack.push(editor.value);
+        historyIndex = 0;
+        isUpdatingInternally = false;
+      };
+
+      window.getEditorContent = function() {
+        return editor.value;
+      };
+
+      window.insertSymbol = function(symbol) {
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        const val = editor.value;
+
+        if (symbol === 'Tab') {
+          symbol = '  '; // 2 spaces
+        }
+
+        editor.value = val.substring(0, start) + symbol + val.substring(end);
+        editor.selectionStart = editor.selectionEnd = start + symbol.length;
+        editor.focus();
+        updateLineNumbers();
+        saveHistory(editor.value);
+
+        if (window.AndroidBridge) {
+          window.AndroidBridge.onContentChanged(editor.value);
+        }
+        reportCursor();
+      };
+
+      window.undo = function() {
+        if (historyIndex > 0) {
+          historyIndex--;
+          isUpdatingInternally = true;
+          editor.value = historyStack[historyIndex];
+          updateLineNumbers();
+          isUpdatingInternally = false;
+          if (window.AndroidBridge) {
+            window.AndroidBridge.onContentChanged(editor.value);
+          }
+        }
+      };
+
+      window.redo = function() {
+        if (historyIndex < historyStack.length - 1) {
+          historyIndex++;
+          isUpdatingInternally = true;
+          editor.value = historyStack[historyIndex];
+          updateLineNumbers();
+          isUpdatingInternally = false;
+          if (window.AndroidBridge) {
+            window.AndroidBridge.onContentChanged(editor.value);
+          }
+        }
+      };
+
+      window.setFontSize = function(sizePx) {
+        editor.style.fontSize = sizePx + 'px';
+        lineNumbers.style.fontSize = (sizePx - 1) + 'px';
+        lineNumbers.style.lineHeight = (sizePx * 1.57) + 'px';
+        editor.style.lineHeight = (sizePx * 1.57) + 'px';
+      };
+
+      // Notify Kotlin that editor is ready
+      window.onload = function() {
+        updateLineNumbers();
+        saveHistory(editor.value);
+        if (window.AndroidBridge) {
+          window.AndroidBridge.onEditorReady();
+        }
+      };
+    })();
+  </script>
+</body>
+</html>

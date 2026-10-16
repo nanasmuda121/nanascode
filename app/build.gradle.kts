@@ -82,6 +82,7 @@ dependencies {
     implementation(project(":core:ui"))
 
     implementation(project(":feature:workspace"))
+    implementation(project(":feature:editor"))
     implementation(project(":feature:auth"))
     implementation(project(":feature:repo"))
     implementation(project(":feature:actions"))

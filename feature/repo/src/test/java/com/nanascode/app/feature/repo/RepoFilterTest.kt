@@ -2,7 +2,10 @@ package com.nanascode.app.feature.repo
 
 import com.nanascode.app.core.model.GitHubRepo
 import com.nanascode.app.core.model.RepoFilterType
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class RepoFilterTest {
@@ -65,5 +68,35 @@ class RepoFilterTest {
             searchQuery = ""
         )
         assertEquals(3, state.filteredRepos.size)
+    }
+
+    @Test
+    fun `github repo json parser handles null default_branch and missing fields without crashing`() {
+        val jsonParser = Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+            coerceInputValues = true
+        }
+
+        val jsonString = """
+            {
+                "id": 999999,
+                "name": "empty-new-repo",
+                "full_name": "nanasmuda121/empty-new-repo",
+                "private": false,
+                "default_branch": null,
+                "description": null,
+                "owner": {
+                    "login": "nanasmuda121"
+                }
+            }
+        """.trimIndent()
+
+        val repo = jsonParser.decodeFromString<GitHubRepo>(jsonString)
+        assertEquals(999999L, repo.id)
+        assertEquals("empty-new-repo", repo.name)
+        assertNull(repo.defaultBranch)
+        assertNotNull(repo.owner)
+        assertEquals("nanasmuda121", repo.owner?.login)
     }
 }

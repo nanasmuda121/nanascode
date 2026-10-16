@@ -25,9 +25,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -43,6 +50,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -57,6 +65,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nanascode.app.core.model.GitHubRepo
@@ -81,14 +90,17 @@ fun RepoListScreen(
     onNavigateBack: () -> Unit,
     onSelectRepo: (GitHubRepo) -> Unit,
     onNavigateToActions: (GitHubRepo) -> Unit,
+    onNavigateToLogin: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val rateLimit by viewModel.rateLimitFlow.collectAsState()
+    val activeToken by viewModel.activeToken.collectAsState()
 
     var isSearchActive by remember { mutableStateOf(false) }
     var showCreateDialog by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
+    var showLogoutConfirm by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -185,18 +197,29 @@ fun RepoListScreen(
                     IconButton(onClick = viewModel::refreshRepos) {
                         Icon(imageVector = Icons.Default.Refresh, contentDescription = "Muat Ulang", tint = NanasTextPrimary)
                     }
+                    if (activeToken != null) {
+                        IconButton(onClick = { showLogoutConfirm = true }) {
+                            Icon(
+                                imageVector = Icons.Default.ExitToApp,
+                                contentDescription = "Keluar dari GitHub",
+                                tint = NanasError
+                            )
+                        }
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = NanasDarkSurface)
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showCreateDialog = true },
-                containerColor = NanasYellow,
-                contentColor = Color.Black,
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Buat Repositori Baru")
+            if (activeToken != null) {
+                FloatingActionButton(
+                    onClick = { showCreateDialog = true },
+                    containerColor = NanasYellow,
+                    contentColor = Color.Black,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = "Buat Repositori Baru")
+                }
             }
         }
     ) { innerPadding ->
@@ -244,7 +267,56 @@ fun RepoListScreen(
 
             // Konten Daftar Repo
             Box(modifier = Modifier.fillMaxSize()) {
-                if (uiState.isLoading && uiState.repos.isEmpty()) {
+                if (activeToken == null) {
+                    // Tampilan jika user belum login ke GitHub
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Card(
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = NanasDarkSurface),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = null,
+                                    tint = NanasYellow,
+                                    modifier = Modifier.size(48.dp)
+                                )
+                                Spacer(modifier = Modifier.height(14.dp))
+                                Text(
+                                    text = "Mode Lokal / Tamu",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 17.sp,
+                                    color = NanasTextPrimary
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Anda sedang dalam mode lokal. Masuk dengan GitHub Personal Access Token untuk melihat, mencari, dan mengelola repositori remote Anda.",
+                                    fontSize = 13.sp,
+                                    color = NanasTextSecondary,
+                                    textAlign = TextAlign.Center,
+                                    lineHeight = 18.sp
+                                )
+                                Spacer(modifier = Modifier.height(18.dp))
+                                Button(
+                                    onClick = onNavigateToLogin,
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = NanasYellow, contentColor = Color.Black)
+                                ) {
+                                    Text(text = "Masuk dengan GitHub", fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                } else if (uiState.isLoading && uiState.repos.isEmpty()) {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
                         color = NanasYellow
@@ -293,6 +365,45 @@ fun RepoListScreen(
                 viewModel.createRepository(name, desc, isPrivate, autoInit, gitignore, license)
                 showCreateDialog = false
             }
+        )
+    }
+
+    // Dialog: Konfirmasi Logout
+    if (showLogoutConfirm) {
+        val user = viewModel.getActiveUsername() ?: "GitHub"
+        AlertDialog(
+            onDismissRequest = { showLogoutConfirm = false },
+            title = {
+                Text(
+                    text = "Keluar dari Akun GitHub?",
+                    fontWeight = FontWeight.Bold,
+                    color = NanasTextPrimary
+                )
+            },
+            text = {
+                Text(
+                    text = "Anda akan keluar dari akun @$user. Anda tetap dapat melanjutkan bekerja dalam mode offline/lokal.",
+                    color = NanasTextSecondary
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.logout()
+                        showLogoutConfirm = false
+                        onNavigateBack()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = NanasError, contentColor = Color.White)
+                ) {
+                    Text(text = "Keluar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutConfirm = false }) {
+                    Text(text = "Batal", color = NanasTextSecondary)
+                }
+            },
+            containerColor = NanasDarkSurface
         )
     }
 }
