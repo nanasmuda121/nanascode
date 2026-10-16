@@ -61,17 +61,17 @@ android {
 }
 
 dependencies {
-    implementation(projects.core.model)
-    implementation(projects.core.common)
-    implementation(projects.core.security)
-    implementation(projects.core.network)
-    implementation(projects.core.database)
-    implementation(projects.core.datastore)
-    implementation(projects.core.ui)
+    implementation(project(":core:model"))
+    implementation(project(":core:common"))
+    implementation(project(":core:security"))
+    implementation(project(":core:network"))
+    implementation(project(":core:database"))
+    implementation(project(":core:datastore"))
+    implementation(project(":core:ui"))
 
-    implementation(projects.feature.auth)
-    implementation(projects.feature.repo)
-    implementation(projects.feature.actions)
+    implementation(project(":feature:auth"))
+    implementation(project(":feature:repo"))
+    implementation(project(":feature:actions"))
 
     // AndroidX & Lifecycle
     implementation(libs.androidx.core.ktx)

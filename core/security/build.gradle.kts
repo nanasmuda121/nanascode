@@ -25,8 +25,8 @@ android {
 }
 
 dependencies {
-    implementation(projects.core.model)
-    implementation(projects.core.common)
+    implementation(project(":core:model"))
+    implementation(project(":core:common"))
 
     // Security Crypto (EncryptedSharedPreferences)
     implementation(libs.security-crypto)

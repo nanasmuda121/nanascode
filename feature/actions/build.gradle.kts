@@ -31,10 +31,10 @@ android {
 }
 
 dependencies {
-    implementation(projects.core.model)
-    implementation(projects.core.common)
-    implementation(projects.core.network)
-    implementation(projects.core.ui)
+    implementation(project(":core:model"))
+    implementation(project(":core:common"))
+    implementation(project(":core:network"))
+    implementation(project(":core:ui"))
     implementation(libs.kotlinx.serialization.json)
 
     // Compose

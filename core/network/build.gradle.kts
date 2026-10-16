@@ -26,9 +26,9 @@ android {
 }
 
 dependencies {
-    implementation(projects.core.model)
-    implementation(projects.core.common)
-    implementation(projects.core.security)
+    implementation(project(":core:model"))
+    implementation(project(":core:common"))
+    implementation(project(":core:security"))
 
     // Retrofit & OkHttp
     implementation(libs.retrofit)
