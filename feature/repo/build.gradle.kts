@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.nanaseditor.nanas.feature.repo"
+    namespace = "com.nanascode.app.feature.repo"
     compileSdk = 34
 
     defaultConfig {

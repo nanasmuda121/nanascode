@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.nanaseditor.nanas.core.ui"
+    namespace = "com.nanascode.app.core.ui"
     compileSdk = 34
 
     defaultConfig {

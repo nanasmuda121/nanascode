@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.nanaseditor.nanas.feature.actions"
+    namespace = "com.nanascode.app.feature.actions"
     compileSdk = 34
 
     defaultConfig {

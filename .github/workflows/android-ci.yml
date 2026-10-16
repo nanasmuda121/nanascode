@@ -37,16 +37,23 @@ jobs:
           chmod +x gradlew
 
       - name: Run Unit Tests
-        run: ./gradlew testDebugUnitTest --continue
+        run: ./gradlew testStandaloneDebugUnitTest --continue
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace
+      - name: Build Release & Debug APKs
+        run: ./gradlew assembleStandaloneRelease assembleStandaloneDebug --stacktrace
+
+      - name: Upload Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NanasCode-standalone-release-apk
+          path: app/build/outputs/apk/standalone/release/app-standalone-release.apk
+          retention-days: 30
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: NanasCode-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: NanasCode-standalone-debug-apk
+          path: app/build/outputs/apk/standalone/debug/app-standalone-debug.apk
           retention-days: 30
 
       - name: Upload Unit Test Reports
@@ -61,20 +68,37 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.1.0-alpha
-          name: "NanasCode v0.1.0-alpha (Debug APK)"
+          tag_name: v0.1.5-alpha
+          name: "NanasCode v0.1.5-alpha (Release APK)"
           body: |
-            ### 🍍 NanasCode v0.1.0-alpha
-            Build APK terbaru dari Milestone 1 (M1).
+            ### 🍍 NanasCode v0.1.5-alpha (Milestone 1.5 Update)
+            Build APK Release terbaru dengan mode lokal offline-first dan enkripsi hardware Keystore!
 
-            #### Fitur:
-            - **GitHub Authentication**: Personal Access Token (Classic & Fine-grained), validasi scope (`repo`, `read:user`, `workflow`).
-            - **Repository Management**: Daftar repo publik/private, filter, pencarian, dan pembuatan repo baru.
-            - **GitHub Actions Tab**: Khusus repo publik untuk memantau status CI/CD.
-            - **Material 3 UI**: Antarmuka responsif ramah sentuh ala Acode dengan warna khas Nanas.
+            #### ✨ Apa yang Baru:
+            1. **Login GitHub Sekarang Opsional**:
+               - Layar awal menyediakan pilihan **"Lanjut Tanpa Login"** dan **"Masuk dengan GitHub"**.
+               - Koding, manajemen file, terminal, dan git commit offline dapat digunakan sepenuhnya tanpa akun GitHub.
+               - Login dapat dilakukan kapan saja nanti dari menu Pengaturan atau saat mempublikasikan proyek ke GitHub.
+            2. **Workspace Lokal & Project Templates**:
+               - Template bawaan: **HTML5 + Tailwind CSS v4**, **Node.js + Express API**, **React + Vite**, **Python CLI**, dan **Proyek Kosong**.
+               - Dukungan impor/ekspor folder eksternal via SAF (*Storage Access Framework*).
+               - Tombol **"Publikasikan ke GitHub"** untuk mengekspor proyek lokal ke repo GitHub baru.
+            3. **Android Keystore (AES-256-GCM) + DataStore**:
+               - Menggantikan *EncryptedSharedPreferences* dengan *Hardware-backed Keystore AES-GCM*.
+               - Ciphertext tersimpan aman di Preferences DataStore secara asinkron tanpa I/O blocking.
+            4. **Offline Git Engine (JGit)**:
+               - Inisialisasi git lokal (`git init`), commit (`git commit`), status, dan branch secara offline.
+               - Kloning repositori publik tanpa autentikasi (anonymous clone via JGit).
+            5. **Package Rename**: Migrasi bersih ke `com.nanascode.app`.
+            6. **Stack Update**: AGP 8.6.1, Kotlin 2.0.21, KSP 2.0.21-1.0.28, Hilt 2.52, Compose BOM 2024.10.00.
 
-            **Direct Download**: Klik file `app-debug.apk` di bawah untuk langsung download dan install di Android.
-          files: app/build/outputs/apk/debug/app-debug.apk
+            ---
+            #### 📥 Download Langsung:
+            - **[app-standalone-release.apk](https://github.com/nanasmuda121/nanascode/releases/download/v0.1.5-alpha/app-standalone-release.apk)** (Disarankan, Release siap pakai)
+            - **[app-standalone-debug.apk](https://github.com/nanasmuda121/nanascode/releases/download/v0.1.5-alpha/app-standalone-debug.apk)** (Debug build)
+          files: |
+            app/build/outputs/apk/standalone/release/app-standalone-release.apk
+            app/build/outputs/apk/standalone/debug/app-standalone-debug.apk
           draft: false
           prerelease: true
         env:

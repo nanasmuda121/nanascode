@@ -1,0 +1,144 @@
+package com.nanascode.app
+
+import android.content.Intent
+import android.net.Uri
+import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.nanascode.app.core.ui.theme.NanasCodeTheme
+import com.nanascode.app.core.ui.theme.NanasDarkBg
+import com.nanascode.app.feature.auth.AuthViewModel
+import com.nanascode.app.feature.auth.LoginScreen
+import com.nanascode.app.feature.repo.RepoListScreen
+import com.nanascode.app.feature.repo.RepoViewModel
+import com.nanascode.app.feature.workspace.WelcomeScreen
+import com.nanascode.app.feature.workspace.WorkspaceListScreen
+import com.nanascode.app.feature.workspace.WorkspaceViewModel
+import dagger.hilt.android.AndroidEntryPoint
+
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            NanasCodeTheme(darkTheme = true) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = NanasDarkBg
+                ) {
+                    val openDocumentTreeLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.OpenDocumentTree()
+                    ) { uri: Uri? ->
+                        if (uri != null) {
+                            contentResolver.takePersistableUriPermission(
+                                uri,
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                            )
+                            Toast.makeText(this@MainActivity, "Folder dipilih via SAF: ${uri.lastPathSegment}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+
+                    NanasNavHost(
+                        onShowToast = { msg ->
+                            Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
+                        },
+                        onOpenSafFolder = {
+                            openDocumentTreeLauncher.launch(null)
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun NanasNavHost(
+    onShowToast: (String) -> Unit,
+    onOpenSafFolder: () -> Unit
+) {
+    val navController = rememberNavController()
+
+    NavHost(
+        navController = navController,
+        startDestination = "welcome"
+    ) {
+        // Layar Awal: Sambutan, Pilihan Login GitHub atau Lanjut Mode Lokal
+        composable("welcome") {
+            WelcomeScreen(
+                onLoginWithGitHubClick = {
+                    navController.navigate("auth")
+                },
+                onContinueOfflineClick = {
+                    navController.navigate("workspaces") {
+                        popUpTo("welcome") { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // Layar Workspace Lokal & Offline-First Projects
+        composable("workspaces") {
+            val workspaceViewModel: WorkspaceViewModel = hiltViewModel()
+            WorkspaceListScreen(
+                viewModel = workspaceViewModel,
+                onOpenWorkspace = { workspace ->
+                    onShowToast("Membuka editor untuk proyek lokal: ${workspace.name}")
+                },
+                onNavigateToLogin = {
+                    navController.navigate("auth")
+                },
+                onNavigateToGitHubRepos = {
+                    navController.navigate("repos")
+                },
+                onImportFolderSaf = onOpenSafFolder
+            )
+        }
+
+        // Layar Login GitHub (Opsional)
+        composable("auth") {
+            val authViewModel: AuthViewModel = hiltViewModel()
+            LoginScreen(
+                viewModel = authViewModel,
+                onNavigateToRepos = {
+                    navController.navigate("workspaces") {
+                        popUpTo("auth") { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // Layar Manajemen Repositori GitHub
+        composable("repos") {
+            val repoViewModel: RepoViewModel = hiltViewModel()
+            RepoListScreen(
+                viewModel = repoViewModel,
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onSelectRepo = { repo ->
+                    onShowToast("Membuka editor untuk ${repo.fullName}")
+                },
+                onNavigateToActions = { repo ->
+                    if (repo.isPrivate) {
+                        onShowToast("Fitur Actions hanya untuk repo publik")
+                    } else {
+                        onShowToast("Membuka GitHub Actions untuk ${repo.fullName} (Fitur F6)")
+                    }
+                }
+            )
+        }
+    }
+}

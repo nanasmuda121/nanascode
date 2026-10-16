@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.nanaseditor.nanas.feature.auth"
+    namespace = "com.nanascode.app.feature.auth"
     compileSdk = 34
 
     defaultConfig {

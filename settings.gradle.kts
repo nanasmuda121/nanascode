@@ -34,9 +34,11 @@ include(":core:security")
 include(":core:network")
 include(":core:database")
 include(":core:datastore")
+include(":core:git")
 include(":core:ui")
 
 // Feature modules
 include(":feature:auth")
 include(":feature:repo")
 include(":feature:actions")
+include(":feature:workspace")

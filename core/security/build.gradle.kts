@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.nanaseditor.nanas.core.security"
+    namespace = "com.nanascode.app.core.security"
     compileSdk = 34
 
     defaultConfig {
@@ -28,8 +28,8 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:common"))
 
-    // Security Crypto (EncryptedSharedPreferences)
-    implementation(libs.security.crypto)
+    // DataStore Preferences
+    implementation(libs.datastore.preferences)
 
     // Hilt
     implementation(libs.hilt.android)
@@ -37,7 +37,10 @@ dependencies {
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
 }

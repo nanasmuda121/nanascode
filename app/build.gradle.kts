@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.nanaseditor.nanas"
+    namespace = "com.nanascode.app"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.nanaseditor.nanas"
+        applicationId = "com.nanascode.app"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
@@ -24,6 +24,16 @@ android {
 
         ndk {
             abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
+        }
+    }
+
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("standalone") {
+            dimension = "distribution"
+        }
+        create("playstore") {
+            dimension = "distribution"
         }
     }
 
@@ -56,6 +66,7 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/DEPENDENCIES"
         }
     }
 }
@@ -67,8 +78,10 @@ dependencies {
     implementation(project(":core:network"))
     implementation(project(":core:database"))
     implementation(project(":core:datastore"))
+    implementation(project(":core:git"))
     implementation(project(":core:ui"))
 
+    implementation(project(":feature:workspace"))
     implementation(project(":feature:auth"))
     implementation(project(":feature:repo"))
     implementation(project(":feature:actions"))
