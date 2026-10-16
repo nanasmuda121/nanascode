@@ -179,7 +179,7 @@ fun RepoItemCard(
 
                 // Default branch
                 Text(
-                    text = repo.defaultBranch,
+                    text = repo.defaultBranch ?: "main",
                     fontSize = 11.sp,
                     color = NanasTextSecondary.copy(alpha = 0.8f)
                 )
