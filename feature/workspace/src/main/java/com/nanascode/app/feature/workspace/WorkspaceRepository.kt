@@ -156,17 +156,15 @@ class WorkspaceRepository @Inject constructor(
         isPrivate: Boolean,
         description: String?
     ): Flow<NetworkResult<GitHubRepo>> = flow {
-        emit(NetworkResult.Loading)
-
         val token = tokenManager.getActiveToken()
         if (token == null) {
-            emit(NetworkResult.Error("Login diperlukan untuk mempublikasikan proyek ke GitHub.", 401))
+            emit(NetworkResult.Error(code = 401, message = "Login diperlukan untuk mempublikasikan proyek ke GitHub."))
             return@flow
         }
 
         val dir = File(workspacesDir, workspaceId)
         if (!dir.exists()) {
-            emit(NetworkResult.Error("Direktori workspace tidak ditemukan.", 404))
+            emit(NetworkResult.Error(code = 404, message = "Direktori workspace tidak ditemukan."))
             return@flow
         }
 
@@ -183,7 +181,7 @@ class WorkspaceRepository @Inject constructor(
                 val createdRepo = createResult.data
                 val cloneUrl = createdRepo.cloneUrl
                 if (cloneUrl.isNullOrBlank()) {
-                    emit(NetworkResult.Error("Gagal mendapatkan clone URL dari repositori yang baru dibuat"))
+                    emit(NetworkResult.Error(message = "Gagal mendapatkan clone URL dari repositori yang baru dibuat"))
                     return@flow
                 }
 
@@ -200,13 +198,18 @@ class WorkspaceRepository @Inject constructor(
                     emit(NetworkResult.Success(createdRepo))
                 } else {
                     val err = pushResult.exceptionOrNull()?.message ?: "Gagal melakukan push ke remote GitHub"
-                    emit(NetworkResult.Error("Repositori dibuat di GitHub namun gagal push kode: $err"))
+                    emit(NetworkResult.Error(message = "Repositori dibuat di GitHub namun gagal push kode: $err"))
                 }
             }
             is NetworkResult.Error -> {
-                emit(NetworkResult.Error(createResult.message, createResult.statusCode))
+                emit(NetworkResult.Error(code = createResult.code, message = createResult.message))
             }
-            is NetworkResult.Loading -> Unit
+            is NetworkResult.Unauthorized -> {
+                emit(NetworkResult.Unauthorized(createResult.message))
+            }
+            is NetworkResult.NetworkUnavailable -> {
+                emit(NetworkResult.NetworkUnavailable)
+            }
         }
     }
 

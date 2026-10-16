@@ -79,12 +79,14 @@ class WorkspaceViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
+            _publishState.value = PublishState.Loading
             workspaceRepository.publishToGitHub(workspaceId, repoName, isPrivate, description)
                 .collect { result ->
                     when (result) {
-                        is NetworkResult.Loading -> _publishState.value = PublishState.Loading
                         is NetworkResult.Success -> _publishState.value = PublishState.Success(result.data)
                         is NetworkResult.Error -> _publishState.value = PublishState.Error(result.message)
+                        is NetworkResult.Unauthorized -> _publishState.value = PublishState.Error(result.message)
+                        is NetworkResult.NetworkUnavailable -> _publishState.value = PublishState.Error("Tidak ada koneksi internet.")
                     }
                 }
         }

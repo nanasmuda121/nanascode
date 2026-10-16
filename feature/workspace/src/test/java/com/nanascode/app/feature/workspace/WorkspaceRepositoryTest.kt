@@ -109,7 +109,7 @@ class WorkspaceRepositoryTest {
         // Harus ada error login diperlukan (401)
         val errorResult = results.filterIsInstance<NetworkResult.Error>().firstOrNull()
         assertTrue("Harus menghasilkan error login diperlukan", errorResult != null)
-        assertEquals(401, errorResult?.statusCode)
+        assertEquals(401, errorResult?.code)
         assertTrue(errorResult?.message?.contains("Login diperlukan") == true)
     }
 }
