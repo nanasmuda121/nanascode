@@ -29,7 +29,7 @@ dependencies {
     implementation(project(":core:common"))
 
     // Security Crypto (EncryptedSharedPreferences)
-    implementation(libs.security-crypto)
+    implementation(libs.security.crypto)
 
     // Hilt
     implementation(libs.hilt.android)
