@@ -115,10 +115,11 @@ fun RepoItemCard(
         }
 
         // Deskripsi Repo
-        if (!repo.description.isNullOrBlank()) {
+        val description = repo.description
+        if (!description.isNullOrBlank()) {
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = repo.description,
+                text = description,
                 style = MaterialTheme.typography.bodySmall,
                 color = NanasTextSecondary,
                 maxLines = 2,
@@ -140,17 +141,18 @@ fun RepoItemCard(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Bahasa utama
-                if (!repo.language.isNullOrBlank()) {
+                val language = repo.language
+                if (!language.isNullOrBlank()) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
                                 .clip(CircleShape)
-                                .background(getLanguageColor(repo.language))
+                                .background(getLanguageColor(language))
                         )
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
-                            text = repo.language,
+                            text = language,
                             fontSize = 12.sp,
                             color = NanasTextPrimary
                         )

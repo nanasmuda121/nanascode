@@ -31,14 +31,15 @@ class GitHubRepositoryImpl @Inject constructor(
             val code = response.code()
 
             // Ekstrak info rate limit
+            val headers = response.headers()
             val rateLimit = RateLimitInfo.fromHeaders(
-                response.header("x-ratelimit-limit"),
-                response.header("x-ratelimit-remaining"),
-                response.header("x-ratelimit-reset")
+                headers["x-ratelimit-limit"],
+                headers["x-ratelimit-remaining"],
+                headers["x-ratelimit-reset"]
             )?.also { networkStateHolder.updateRateLimit(it) }
 
             if (response.isSuccessful && response.body() != null) {
-                val scopeHeader = response.header("x-oauth-scopes")
+                val scopeHeader = headers["x-oauth-scopes"]
                 val scopeResult = GitHubScopeParser.parseHeader(scopeHeader, token)
                 networkStateHolder.updateScopeResult(scopeResult)
                 NetworkResult.Success(Pair(response.body()!!, scopeResult), rateLimit)
@@ -78,10 +79,11 @@ class GitHubRepositoryImpl @Inject constructor(
             )
             val code = response.code()
 
+            val repoHeaders = response.headers()
             val rateLimit = RateLimitInfo.fromHeaders(
-                response.header("x-ratelimit-limit"),
-                response.header("x-ratelimit-remaining"),
-                response.header("x-ratelimit-reset")
+                repoHeaders["x-ratelimit-limit"],
+                repoHeaders["x-ratelimit-remaining"],
+                repoHeaders["x-ratelimit-reset"]
             )?.also { networkStateHolder.updateRateLimit(it) }
 
             if (response.isSuccessful && response.body() != null) {
@@ -120,10 +122,11 @@ class GitHubRepositoryImpl @Inject constructor(
             val response = apiService.createRepository(request)
             val code = response.code()
 
+            val createHeaders = response.headers()
             val rateLimit = RateLimitInfo.fromHeaders(
-                response.header("x-ratelimit-limit"),
-                response.header("x-ratelimit-remaining"),
-                response.header("x-ratelimit-reset")
+                createHeaders["x-ratelimit-limit"],
+                createHeaders["x-ratelimit-remaining"],
+                createHeaders["x-ratelimit-reset"]
             )?.also { networkStateHolder.updateRateLimit(it) }
 
             if (response.isSuccessful && response.body() != null) {
