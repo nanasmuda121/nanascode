@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -56,3 +56,26 @@ jobs:
           name: unit-test-reports
           path: "**/build/reports/tests/**"
           retention-days: 7
+
+      - name: Create or Update GitHub Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.0-alpha
+          name: "NanasCode v0.1.0-alpha (Debug APK)"
+          body: |
+            ### 🍍 NanasCode v0.1.0-alpha
+            Build APK terbaru dari Milestone 1 (M1).
+
+            #### Fitur:
+            - **GitHub Authentication**: Personal Access Token (Classic & Fine-grained), validasi scope (`repo`, `read:user`, `workflow`).
+            - **Repository Management**: Daftar repo publik/private, filter, pencarian, dan pembuatan repo baru.
+            - **GitHub Actions Tab**: Khusus repo publik untuk memantau status CI/CD.
+            - **Material 3 UI**: Antarmuka responsif ramah sentuh ala Acode dengan warna khas Nanas.
+
+            **Direct Download**: Klik file `app-debug.apk` di bawah untuk langsung download dan install di Android.
+          files: app/build/outputs/apk/debug/app-debug.apk
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
