@@ -1,6 +1,8 @@
 package com.nanaseditor.nanas.feature.actions
 
-import org.json.JSONObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 
 object WorkflowYamlParser {
 
@@ -106,14 +108,15 @@ object WorkflowYamlParser {
      * Membuat JSON payload untuk POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches
      */
     fun createDispatchPayload(ref: String, inputs: Map<String, String>): String {
-        val root = JSONObject()
-        root.put("ref", ref)
-        if (inputs.isNotEmpty()) {
-            val inputsObj = JSONObject()
-            inputs.forEach { (k, v) -> inputsObj.put(k, v) }
-            root.put("inputs", inputsObj)
+        val json = buildJsonObject {
+            put("ref", ref)
+            if (inputs.isNotEmpty()) {
+                putJsonObject("inputs") {
+                    inputs.forEach { (k, v) -> put(k, v) }
+                }
+            }
         }
-        return root.toString()
+        return json.toString()
     }
 }
 
