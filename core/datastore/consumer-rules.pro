@@ -1,0 +1,2 @@
+# DataStore
+-dontwarn androidx.datastore.**
