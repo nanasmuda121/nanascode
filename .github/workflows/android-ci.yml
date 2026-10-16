@@ -40,7 +40,11 @@ jobs:
         run: ./gradlew testStandaloneDebugUnitTest --continue
 
       - name: Build Release & Debug APKs
-        run: ./gradlew assembleStandaloneRelease assembleStandaloneDebug --stacktrace
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+UseG1GC"
+        run: |
+          ./gradlew assembleStandaloneRelease --stacktrace
+          ./gradlew assembleStandaloneDebug --stacktrace
 
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
