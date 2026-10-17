@@ -49,10 +49,10 @@ class EditorTabTest {
         val dirNodeCollapsed = FileNode("src", "/path/src", isDirectory = true, isExpanded = false)
         val dirNodeExpanded = FileNode("src", "/path/src", isDirectory = true, isExpanded = true)
 
-        assertEquals("🌐", htmlNode.icon)
-        assertEquals("🟨", jsNode.icon)
-        assertEquals("🐍", pyNode.icon)
-        assertEquals("📁", dirNodeCollapsed.icon)
-        assertEquals("📂", dirNodeExpanded.icon)
+        assertEquals("HTML", htmlNode.icon)
+        assertEquals("JS", jsNode.icon)
+        assertEquals("PY", pyNode.icon)
+        assertEquals("[+]", dirNodeCollapsed.icon)
+        assertEquals("[-]", dirNodeExpanded.icon)
     }
 }

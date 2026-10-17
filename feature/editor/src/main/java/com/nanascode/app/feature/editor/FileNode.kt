@@ -14,19 +14,19 @@ data class FileNode(
 
     val icon: String
         get() = if (isDirectory) {
-            if (isExpanded) "📂" else "📁"
+            if (isExpanded) "[-]" else "[+]"
         } else {
             when (extension) {
-                "html", "htm" -> "🌐"
-                "css", "scss" -> "🎨"
-                "js", "mjs", "cjs" -> "🟨"
-                "ts", "tsx" -> "🔷"
-                "json" -> "📦"
-                "py" -> "🐍"
-                "kt", "kts" -> "🟣"
-                "md" -> "📝"
-                "png", "jpg", "jpeg", "svg", "webp" -> "🖼️"
-                else -> "📄"
+                "html", "htm" -> "HTML"
+                "css", "scss" -> "CSS"
+                "js", "mjs", "cjs" -> "JS"
+                "ts", "tsx" -> "TS"
+                "json" -> "JSON"
+                "py" -> "PY"
+                "kt", "kts" -> "KT"
+                "md" -> "MD"
+                "png", "jpg", "jpeg", "svg", "webp" -> "IMG"
+                else -> "FILE"
             }
         }
 

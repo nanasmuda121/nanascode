@@ -153,9 +153,9 @@ fun RepoExplorerDialog(
                                 shape = RoundedCornerShape(8.dp)
                             ) {
                                 Text(
-                                    text = "🌿 ${state.selectedBranch}",
+                                    text = "branch: ${state.selectedBranch}",
                                     fontSize = 12.sp,
-                                    color = NanasYellow,
+                                    color = NanasTextPrimary,
                                     fontWeight = FontWeight.Medium
                                 )
                             }
@@ -259,7 +259,12 @@ fun RepoExplorerDialog(
                                     .align(Alignment.Center),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text(text = "📦", fontSize = 48.sp)
+                                Icon(
+                                    imageVector = Icons.Default.Folder,
+                                    contentDescription = null,
+                                    tint = NanasTextSecondary,
+                                    modifier = Modifier.size(56.dp)
+                                )
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Text(
                                     text = "Repo Kosong",
@@ -370,10 +375,10 @@ fun RepoExplorerDialog(
 
                         Button(
                             onClick = { onCloneAndOpen(repo) },
-                            colors = ButtonDefaults.buttonColors(containerColor = NanasGreen),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text("📥 Buka di Editor", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("Buka di Editor", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
                     }
                 }

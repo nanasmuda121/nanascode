@@ -66,13 +66,13 @@ jobs:
                   pass
 
           passed = total - failures - errors - skipped
-          summary = f'''### 🧪 Ringkasan Hasil Unit Test
+          summary = f'''### Ringkasan Hasil Unit Test
           | Status | Jumlah |
           |---|---|
-          | 🟢 Lulus (Passed) | **{passed}** |
-          | 🔴 Gagal (Failed) | **{failures + errors}** |
-          | ⚪ Dilewati (Skipped) | **{skipped}** |
-          | 📊 Total Pengujian | **{total}** |
+          | Lulus (Passed) | **{passed}** |
+          | Gagal (Failed) | **{failures + errors}** |
+          | Dilewati (Skipped) | **{skipped}** |
+          | Total Pengujian | **{total}** |
           '''
           print(summary)
           summary_file = os.getenv('GITHUB_STEP_SUMMARY')
@@ -123,36 +123,37 @@ jobs:
           tag_name: v0.2.0
           name: "NasCode v0.2.0 (Official Release - com.nascode.nanas)"
           body: |
-            ### 🍍 NasCode v0.2.0 (Official Release)
-            Rilis resmi **NasCode** dengan package name tetap `com.nascode.nanas`, tema monokrom modern, pewarnaan sintaks blok kode, signing certificate permanen, dan penjelajah file repositori remote!
+            ### NasCode v0.2.0 (Official Release)
+            Rilis resmi **NasCode** dengan package name tetap `com.nascode.nanas`, tema monokrom modern, penghapusan seluruh output simulasi, integrasi nyata Termux (RUN_COMMAND), pencegahan React layar putih dengan panel error console, dan logo resmi!
 
-            > ⚠️ **PENTING - MIGRASI PEMASANGAN SEKALI TERAKHIR**:
+            > [!IMPORTANT]
+            > **MIGRASI PEMASANGAN SEKALI TERAKHIR**:
             > Karena versi ini memperbarui Package Name menjadi `com.nascode.nanas` dan ditandatangani menggunakan **Keystore Sertifikat Permanen**, pengguna perlu **uninstall versi lama sekali terakhir**. Semua pembaruan APK berikutnya (baik debug maupun release) akan langsung menimpa tanpa perlu uninstall lagi.
 
-            #### ✨ Pembaruan & Fitur Utama di v0.2.0:
-            1. **Keystore Permanen & Auto Version Code (Prioritas Signing)**:
-               - Menggunakan keystore RSA-2048 permanen (berlaku hingga 2054) yang tersimpan aman di GitHub Secrets.
-               - Build Debug dan Release menggunakan keystore dan package ID (`com.nascode.nanas`) yang sama persis sehingga update menimpa tanpa konflik signature.
-               - `versionCode` naik otomatis di setiap build dari nomor run CI.
-            2. **Desain UI Monokrom & Blok Kode Berwarna**:
-               - Tampilan aplikasi mengusung tema gelap monokrom bersih (dark monochrome) tanpa warna kuning/hijau berlebih.
-               - Kode di dalam editor memiliki warna sintaks yang kaya dan hidup layaknya blok kode standar (VS Code Dark+ syntax theme).
-            3. **Buka Repositori dengan File Explorer & Branch Picker**:
+            #### Pembaruan & Fitur Utama di v0.2.0:
+            1. **Integrasi Termux Nyata (RUN_COMMAND) & Zero Simulasi**:
+               - Menghapus seluruh log simulasi palsu. Eksekusi kode kini dilakukan secara nyata melalui Termux via `com.termux.RUN_COMMAND`.
+               - Tombol "Jalankan di Termux" mengirim intent eksekusi otomatis sesuai jenis proyek (`node file.js`, `python3 file.py`, `npm install && npm run dev -- --host`).
+               - Tombol "Buka Termux" untuk membuka aplikasi langsung atau tautan instalasi F-Droid / GitHub jika belum terpasang.
+               - Dukungan Folder Bersama di `/storage/emulated/0/NasCode/projects` (dengan opsi salin/pindah otomatis dari internal storage) agar Termux dapat membaca dan menulis proyek.
+            2. **Pencegahan React/Vite Layar Putih & WebView Console Log**:
+               - Memblokir pembukaan proyek React/Vite langsung via protokol `file://` (yang menyebabkan layar putih akibat modul ES) dan mengarahkan ke dev server / localhost preview.
+               - Dilengkapi panel ekspansi WebView Console Log yang menangkap error runtime JavaScript, peringatan, dan nomor baris agar penyebab layar putih langsung terlihat.
+            3. **Desain UI Monokrom & Blok Kode Berwarna**:
+               - Seluruh antarmuka menggunakan skema gelap monokrom bersih tanpa warna-warni berlebih.
+               - Kode editor CodeMirror menerapkan pewarnaan sintaks kaya warna bergaya VS Code Dark+.
+               - Seluruh emoji telah dihapus dan digantikan dengan logo resmi NasCode serta ikon antarmuka standar.
+            4. **Buka Repositori dengan Remote File Explorer**:
                - Membuka repositori langsung menampilkan struktur pohon berkas remote (`GET /repos/{o}/{r}/contents`) dan pemilih branch (`GET /repos/{o}/{r}/branches`).
-               - Menampilkan pesan error API asli (kode status HTTP + pesan detail server) alih-alih pesan generik.
+               - Menampilkan pesan error asli dari API GitHub (kode status HTTP + pesan detail server).
                - Menangani repositori kosong (HTTP 409/404) dengan status "Repo Kosong" yang informatif.
-               - Tombol aksi cepat untuk mengklon repo langsung ke workspace lokal dan membukanya di editor.
-            4. **Pemeriksaan Jenis Proyek pada Tombol Run**:
-               - Web HTML/CSS/JS: Tetap dijalankan di Live Web Preview.
-               - Node.js, Python, dan React/Vite: Tidak lagi memunculkan payload JSON mentah. Membuka panel terminal runner dengan perintah eksekusi yang sesuai dan integrasi localhost preview.
-            5. **Optimasi R8 & Ketahanan Rilis**:
-               - Aturan Proguard diperkuat untuk menjaga Hilt, Room, Kotlinx Serialization, JGit, dan WebView JS Interface.
-               - Smoke test start-up otomatis terverifikasi di CI.
-               - Ringkasan angka hasil pengujian (Lulus/Gagal/Dilewati) otomatis dihasilkan di CI summary.
+            5. **Signing Keystore Permanen & Auto Version Code**:
+               - Menggunakan keystore RSA-2048 permanen (berlaku hingga 2054) yang tersimpan aman di GitHub Secrets.
+               - `versionCode` dinaikkan otomatis dari nomor run CI.
 
             ---
-            #### 📥 Unduh Berkas APK:
-            - **[app-standalone-release.apk](https://github.com/nanasmuda121/nanascode/releases/download/v0.2.0/app-standalone-release.apk)** (Disarankan, teroptimasi R8 & ukuran paling ramping)
+            #### Unduh Berkas APK:
+            - **[app-standalone-release.apk](https://github.com/nanasmuda121/nanascode/releases/download/v0.2.0/app-standalone-release.apk)** (Teroptimasi R8, ukuran ramping ~3.7 MB)
             - **[app-standalone-debug.apk](https://github.com/nanasmuda121/nanascode/releases/download/v0.2.0/app-standalone-debug.apk)** (Debug build dengan signature yang sama)
           files: |
             app/build/outputs/apk/standalone/release/app-standalone-release.apk

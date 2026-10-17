@@ -18,7 +18,7 @@ data class ProjectTemplate(
                 description = "Mulai dari awal dengan workspace kosong",
                 iconName = "folder",
                 files = mapOf(
-                    "README.md" to "# Proyek Baru\n\nDibuat dengan NanasCode Mobile Editor 🍍\n",
+                    "README.md" to "# Proyek Baru\n\nDibuat dengan NasCode Mobile Editor\n",
                     ".gitignore" to ".DS_Store\nnode_modules/\n*.log\n"
                 )
             ),
@@ -34,12 +34,12 @@ data class ProjectTemplate(
                         <head>
                           <meta charset="UTF-8">
                           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                          <title>NanasCode App</title>
+                          <title>NasCode App</title>
                           <link rel="stylesheet" href="style.css">
                         </head>
                         <body class="bg-zinc-900 text-white min-h-screen flex items-center justify-center p-4">
                           <div class="max-w-md w-full bg-zinc-800 border border-zinc-700 rounded-2xl p-6 text-center shadow-2xl">
-                            <h1 class="text-3xl font-extrabold text-amber-400 mb-2">🍍 NanasCode</h1>
+                            <h1 class="text-3xl font-extrabold text-white mb-2">NasCode</h1>
                             <p class="text-zinc-400 mb-4">Mobile Code Editor siap koding di Android.</p>
                             <button class="bg-amber-400 hover:bg-amber-300 text-black font-semibold px-4 py-2 rounded-xl transition">
                               Mulai Koding
@@ -81,7 +81,7 @@ data class ProjectTemplate(
                         app.get('/', (req, res) => {
                           res.json({
                             status: 'success',
-                            message: 'Halo dari server NanasCode di Android! 🍍',
+                            message: 'Halo dari server NasCode di Android!',
                             time: new Date().toISOString()
                           });
                         });
@@ -145,7 +145,7 @@ data class ProjectTemplate(
 
                           return (
                             <div style={{ fontFamily: 'sans-serif', padding: '2rem', textAlign: 'center' }}>
-                              <h1>🍍 NanasCode React App</h1>
+                              <h1>NasCode React App</h1>
                               <p>Edit <code>src/App.jsx</code> langsung dari HP Android!</p>
                               <button onClick={() => setCount(count + 1)} style={{ padding: '8px 16px', fontSize: '1rem' }}>
                                 Diklik: {count} kali
@@ -156,7 +156,7 @@ data class ProjectTemplate(
                     """.trimIndent(),
                     "package.json" to """
                         {
-                          "name": "nanas-react-vite",
+                          "name": "nascode-react-vite",
                           "private": true,
                           "version": "0.0.0",
                           "type": "module",
@@ -188,7 +188,7 @@ data class ProjectTemplate(
                         import sys
 
                         def main():
-                            print("🍍 Halo dari Python di NanasCode Android!")
+                            print("Halo dari Python di NasCode Android!")
                             print(f"Versi Python: {sys.version}")
 
                         if __name__ == "__main__":

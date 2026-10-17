@@ -40,7 +40,7 @@ class GitManagerTest {
 
         // Create a test file
         val file = File(tempDir, "hello.txt")
-        file.writeText("Halo NanasCode 🍍")
+        file.writeText("Halo NasCode")
 
         val statusBefore = gitManager.getStatus(tempDir).getOrThrow()
         assertTrue(statusBefore.untracked.contains("hello.txt"))

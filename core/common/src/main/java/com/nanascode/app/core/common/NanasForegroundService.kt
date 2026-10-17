@@ -73,7 +73,7 @@ class NanasForegroundService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("🍍 NanasCode Sedang Aktif")
+            .setContentTitle("NasCode Sedang Aktif")
             .setContentText("Workspace '$workspaceName' berjalan di latar belakang")
             .setSmallIcon(android.R.drawable.ic_menu_edit)
             .setContentIntent(pendingIntent)

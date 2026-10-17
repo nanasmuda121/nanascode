@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Redo
@@ -406,7 +407,12 @@ fun EditorScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(text = "📝", fontSize = 48.sp)
+                                Icon(
+                                    imageVector = Icons.Default.Code,
+                                    contentDescription = null,
+                                    tint = NanasTextSecondary,
+                                    modifier = Modifier.size(56.dp)
+                                )
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Text(
                                     text = "Tidak Ada File Terbuka",
@@ -439,6 +445,9 @@ fun EditorScreen(
             workspaceRoot = workspacePath!!,
             activeFilePath = activeTab?.path,
             previewUrl = previewCustomUrl,
+            onOpenTerminalRunner = {
+                showTerminalRunner = true
+            },
             onDismiss = {
                 showLivePreview = false
                 previewCustomUrl = null
@@ -446,14 +455,18 @@ fun EditorScreen(
         )
     }
 
-    // Dialog: Terminal Runner (Milestone 4 Preview)
-    if (showTerminalRunner && detectedProjectInfo != null) {
+    // Dialog: Terminal Runner (Termux Integration & Milestone 4)
+    if (showTerminalRunner && detectedProjectInfo != null && workspacePath != null) {
         TerminalRunnerDialog(
+            workspaceDir = java.io.File(workspacePath!!),
+            activeFile = activeTab?.path?.let { java.io.File(it) },
             projectType = detectedProjectInfo!!.first,
-            command = detectedProjectInfo!!.second,
             onOpenLocalhostPreview = { url ->
                 previewCustomUrl = url
                 showLivePreview = true
+            },
+            onProjectRelocated = { newTargetDir ->
+                viewModel.initWorkspace(newTargetDir.absolutePath, newTargetDir.name)
             },
             onDismiss = { showTerminalRunner = false }
         )

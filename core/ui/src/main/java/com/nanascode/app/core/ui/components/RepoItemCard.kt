@@ -195,7 +195,7 @@ fun RepoItemCard(
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = if (repo.isPrivate) "Actions (Publik Saja)" else "⚡ Actions",
+                        text = if (repo.isPrivate) "Actions (Publik Saja)" else "Actions",
                         fontSize = 11.sp,
                         color = if (repo.isPrivate) NanasTextSecondary.copy(alpha = 0.6f) else NanasGreen,
                         fontWeight = FontWeight.SemiBold

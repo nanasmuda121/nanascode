@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.nanascode.app.core.ui.components.NasCodeLogo
 import com.nanascode.app.core.model.ProjectSource
 import com.nanascode.app.core.ui.theme.NanasDarkBg
 import com.nanascode.app.core.ui.theme.NanasDarkBorder
@@ -95,10 +96,10 @@ fun WorkspaceListScreen(
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "🍍", fontSize = 20.sp)
+                        NasCodeLogo(modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Workspace NanasCode",
+                            text = "Workspace NasCode",
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                             color = NanasTextPrimary
@@ -251,7 +252,12 @@ fun WorkspaceListScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "📁", fontSize = 48.sp)
+                        Icon(
+                            imageVector = Icons.Default.FolderOpen,
+                            contentDescription = null,
+                            tint = NanasTextSecondary,
+                            modifier = Modifier.size(56.dp)
+                        )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = "Belum Ada Proyek Lokal",

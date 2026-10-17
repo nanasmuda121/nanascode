@@ -83,6 +83,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.nanascode.app.core.model.GitHubUser
 import com.nanascode.app.core.model.ScopeCheckResult
+import com.nanascode.app.core.ui.components.NasCodeLogo
 import com.nanascode.app.core.ui.components.RateLimitCard
 import com.nanascode.app.core.ui.components.ScopeWarningCard
 import com.nanascode.app.core.ui.theme.NanasDarkBg
@@ -137,10 +138,12 @@ fun LoginScreen(
                 },
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        NasCodeLogo(modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "🍍 NanasCode",
+                            text = "NasCode",
                             fontWeight = FontWeight.Bold,
-                            color = NanasYellow,
+                            color = Color.White,
                             fontSize = 18.sp
                         )
                     }

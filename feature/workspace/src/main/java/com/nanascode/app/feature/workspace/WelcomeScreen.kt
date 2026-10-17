@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.nanascode.app.core.ui.components.NasCodeLogo
 import com.nanascode.app.core.ui.theme.NanasDarkBg
 import com.nanascode.app.core.ui.theme.NanasDarkBorder
 import com.nanascode.app.core.ui.theme.NanasDarkSurface
@@ -61,17 +62,7 @@ fun WelcomeScreen(
         verticalArrangement = Arrangement.Center
     ) {
         // App Icon / Logo
-        Box(
-            modifier = Modifier
-                .size(88.dp)
-                .background(NanasYellow.copy(alpha = 0.15f), shape = CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "🍍",
-                fontSize = 44.sp
-            )
-        }
+        NasCodeLogo(modifier = Modifier.size(80.dp))
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -79,7 +70,7 @@ fun WelcomeScreen(
             text = "NasCode",
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
-            color = NanasYellow
+            color = Color.White
         )
 
         Text(

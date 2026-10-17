@@ -63,7 +63,7 @@ class CryptoCipherTest {
 
     @Test
     fun `encrypt empty string and symbols roundtrip succeeds`() {
-        val symbols = "github_pat_11AAAA!@#$%^&*()_+{}[]:\"<>?~`\n\tSelamat Pagi NanasCode 🍍"
+        val symbols = "github_pat_11AAAA!@#$%^&*()_+{}[]:\"<>?~`\n\tSelamat Pagi NasCode"
         val encrypted = cipher.encrypt(symbols)
         val decrypted = cipher.decrypt(encrypted)
         assertEquals(symbols, decrypted)
