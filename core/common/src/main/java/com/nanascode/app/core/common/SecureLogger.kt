@@ -3,7 +3,7 @@ package com.nanascode.app.core.common
 import android.util.Log
 
 object SecureLogger {
-    private const val TAG = "NanasCode"
+    private const val TAG = "NasCode"
 
     private val TOKEN_REGEX = Regex("(ghp_[a-zA-Z0-9]{20,}|github_pat_[a-zA-Z0-9_]{20,}|Bearer\\s+[a-zA-Z0-9_.-]+)")
 
@@ -19,18 +19,34 @@ object SecureLogger {
     }
 
     fun d(tag: String = TAG, message: String) {
-        Log.d(tag, sanitize(message))
+        try {
+            Log.d(tag, sanitize(message))
+        } catch (_: Throwable) {
+            println("[$tag] ${sanitize(message)}")
+        }
     }
 
     fun i(tag: String = TAG, message: String) {
-        Log.i(tag, sanitize(message))
+        try {
+            Log.i(tag, sanitize(message))
+        } catch (_: Throwable) {
+            println("[$tag] ${sanitize(message)}")
+        }
     }
 
     fun w(tag: String = TAG, message: String, throwable: Throwable? = null) {
-        Log.w(tag, sanitize(message), throwable)
+        try {
+            Log.w(tag, sanitize(message), throwable)
+        } catch (_: Throwable) {
+            println("[$tag] WARN: ${sanitize(message)}")
+        }
     }
 
     fun e(tag: String = TAG, message: String, throwable: Throwable? = null) {
-        Log.e(tag, sanitize(message), throwable)
+        try {
+            Log.e(tag, sanitize(message), throwable)
+        } catch (_: Throwable) {
+            println("[$tag] ERROR: ${sanitize(message)}")
+        }
     }
 }
