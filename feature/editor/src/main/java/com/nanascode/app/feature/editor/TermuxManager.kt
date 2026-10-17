@@ -39,7 +39,11 @@ object TermuxManager {
      * Folder proyek bersama di external storage agar Termux bisa membaca dan menulis kode.
      */
     fun getSharedProjectsDirectory(): File {
-        val baseDir = Environment.getExternalStorageDirectory()
+        val baseDir = try {
+            Environment.getExternalStorageDirectory()
+        } catch (_: Throwable) {
+            null
+        } ?: File("/storage/emulated/0")
         // Prioritaskan NasCode/projects, buat jika belum ada
         val dir = File(baseDir, "NasCode/projects")
         if (!dir.exists()) {
@@ -52,7 +56,11 @@ object TermuxManager {
      * Memeriksa apakah berkas berada di dalam penyimpanan bersama (eksternal)
      */
     fun isPathInSharedStorage(path: String): Boolean {
-        val externalPath = Environment.getExternalStorageDirectory().absolutePath
+        val externalPath = try {
+            Environment.getExternalStorageDirectory()?.absolutePath
+        } catch (_: Throwable) {
+            null
+        } ?: "/storage/emulated/0"
         return path.startsWith(externalPath) || path.startsWith("/sdcard") || path.startsWith("/storage/emulated/0")
     }
 

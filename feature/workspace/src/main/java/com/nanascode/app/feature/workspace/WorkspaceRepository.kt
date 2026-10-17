@@ -96,9 +96,9 @@ class WorkspaceRepository @Inject constructor(
             gitManager.initRepository(dir)
             gitManager.commitAll(
                 directory = dir,
-                message = "feat: initial commit from NanasCode template (${template.name})",
-                authorName = "NanasCode Developer",
-                authorEmail = "dev@nanascode.app"
+                message = "feat: initial commit from NasCode template (${template.name})",
+                authorName = "NasCode Developer",
+                authorEmail = "dev@nascode.app"
             )
 
             val workspace = ProjectSource.LocalWorkspace(
@@ -149,7 +149,7 @@ class WorkspaceRepository @Inject constructor(
             // Pastikan git repository diinisialisasi bila belum ada
             if (!File(targetDir, ".git").exists()) {
                 gitManager.initRepository(targetDir)
-                gitManager.commitAll(targetDir, "feat: import project into NanasCode", "NanasCode User", "user@nanascode.app")
+                gitManager.commitAll(targetDir, "feat: import project into NasCode", "NasCode User", "user@nascode.app")
             }
 
             val workspace = ProjectSource.LocalWorkspace(

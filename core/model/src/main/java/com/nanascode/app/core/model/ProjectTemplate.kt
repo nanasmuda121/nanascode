@@ -195,7 +195,7 @@ data class ProjectTemplate(
                             main()
                     """.trimIndent(),
                     "requirements.txt" to "# Tambahkan package pip di sini\n",
-                    "README.md" to "# Python Project\n\nJalankan dengan `python3 main.py` di terminal NanasCode.\n"
+                    "README.md" to "# Python Project\n\nJalankan dengan `python3 main.py` di terminal NasCode.\n"
                 )
             )
         )

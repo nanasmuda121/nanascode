@@ -361,7 +361,7 @@ fun RepoExplorerDialog(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Buka di Editor NanasCode",
+                                text = "Buka di Editor NasCode",
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 13.sp,
                                 color = NanasTextPrimary

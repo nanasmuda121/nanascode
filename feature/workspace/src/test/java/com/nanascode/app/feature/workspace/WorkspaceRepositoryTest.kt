@@ -77,7 +77,7 @@ class WorkspaceRepositoryTest {
         val packageJson = File(folder, "package.json")
 
         assertTrue(indexHtml.exists())
-        assertTrue(indexHtml.readText().contains("NanasCode"))
+        assertTrue(indexHtml.readText().contains("NasCode"))
         assertTrue(styleCss.exists())
         assertTrue(styleCss.readText().contains("@import \"tailwindcss\";"))
         assertTrue(packageJson.exists())

@@ -29,7 +29,7 @@ class NanasForegroundService : Service() {
             return START_NOT_STICKY
         }
 
-        val workspaceName = intent?.getStringExtra(EXTRA_WORKSPACE_NAME) ?: "NanasCode Workspace"
+        val workspaceName = intent?.getStringExtra(EXTRA_WORKSPACE_NAME) ?: "NasCode Workspace"
         val notification = buildNotification(workspaceName)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -53,7 +53,7 @@ class NanasForegroundService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Layanan Editor NanasCode",
+                "Layanan Editor NasCode",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
                 description = "Menjaga proses editor, terminal, dan server lokal tetap berjalan di latar belakang"
