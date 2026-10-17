@@ -235,9 +235,9 @@ class WorkspaceRepository @Inject constructor(
                 val cloneUrl = repo.cloneUrl ?: "https://github.com/${repo.fullName}.git"
                 val token = tokenManager.getActiveToken()
                 gitManager.cloneRepository(
-                    cloneUrl = cloneUrl,
-                    destination = targetDir,
-                    credentials = token?.let { com.nanascode.app.core.git.GitCredentials.PersonalAccessToken(it.rawValue) }
+                    remoteUrl = cloneUrl,
+                    destinationDir = targetDir,
+                    token = token?.rawValue
                 )
                 File(targetDir, ".nanas_meta").writeText(repo.name)
             }
@@ -245,14 +245,9 @@ class WorkspaceRepository @Inject constructor(
                 id = id,
                 name = repo.name,
                 rootPath = targetDir.absolutePath,
-                lastModifiedAt = targetDir.lastModified(),
-                source = ProjectSource.GitHubRemote(
-                    repoId = repo.id,
-                    fullName = repo.fullName,
-                    cloneUrl = repo.cloneUrl ?: "",
-                    defaultBranch = repo.defaultBranch ?: "main",
-                    isPrivate = repo.isPrivate
-                )
+                description = repo.description,
+                linkedGitHubRepo = repo.fullName,
+                lastModifiedAt = targetDir.lastModified()
             )
             refreshWorkspaces()
             workspace

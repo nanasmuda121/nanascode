@@ -209,7 +209,7 @@ fun EditorScreen(
                             },
                             enabled = workspacePath != null
                         ) {
-                            Icon(imageVector = Icons.Default.PlayArrow, contentDescription = "Run Proyek", tint = NanasWhite)
+                            Icon(imageVector = Icons.Default.PlayArrow, contentDescription = "Run Proyek", tint = Color.White)
                         }
                         IconButton(
                             onClick = viewModel::saveActiveFile,
