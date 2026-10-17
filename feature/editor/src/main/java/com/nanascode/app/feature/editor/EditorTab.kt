@@ -14,8 +14,8 @@ data class EditorTab(
         fun detectLanguage(fileName: String): String {
             val ext = fileName.substringAfterLast('.', "").lowercase()
             return when (ext) {
-                "js", "mjs", "cjs" -> "javascript"
-                "ts", "mts" -> "typescript"
+                "js", "mjs", "cjs", "jsx" -> "javascript"
+                "ts", "mts", "tsx" -> "typescript"
                 "html", "htm" -> "html"
                 "css", "scss", "sass" -> "css"
                 "json" -> "json"
