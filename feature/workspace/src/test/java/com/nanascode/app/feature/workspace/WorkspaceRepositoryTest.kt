@@ -112,4 +112,16 @@ class WorkspaceRepositoryTest {
         assertEquals(401, errorResult?.code)
         assertTrue(errorResult?.message?.contains("Login diperlukan") == true)
     }
+
+    @Test
+    fun `getOrCreateDefaultWorkspace creates default workspace when none exists`() = runTest {
+        val ws = repository.getOrCreateDefaultWorkspace()
+        assertNotNull(ws)
+        assertEquals("NasCode Project", ws.name)
+        assertTrue(File(ws.rootPath).exists())
+
+        // Memanggil kedua kali harus mengembalikan workspace yang sama
+        val second = repository.getOrCreateDefaultWorkspace()
+        assertEquals(ws.id, second.id)
+    }
 }

@@ -68,6 +68,15 @@ class WorkspaceRepository @Inject constructor(
         _workspacesFlow.value = list.sortedByDescending { it.lastModifiedAt }
     }
 
+    suspend fun getOrCreateDefaultWorkspace(): ProjectSource.LocalWorkspace = withContext(dispatcherProvider.io) {
+        refreshWorkspaces()
+        val existing = _workspacesFlow.value.firstOrNull()
+        if (existing != null) {
+            return@withContext existing
+        }
+        createWorkspace("NasCode Project", "html-tailwind").getOrThrow()
+    }
+
     suspend fun createWorkspace(
         name: String,
         templateId: String? = null

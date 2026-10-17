@@ -123,31 +123,31 @@ jobs:
           tag_name: v0.2.0
           name: "NasCode v0.2.0 (Official Release - com.nascode.nanas)"
           body: |
-            ### NasCode v0.2.0 (Official Release)
-            Rilis resmi **NasCode** dengan package name tetap `com.nascode.nanas`, tema monokrom modern, penghapusan seluruh output simulasi, integrasi nyata Termux (RUN_COMMAND), pencegahan React layar putih dengan panel error console, dan logo resmi!
+            ### NasCode v0.2.0 (Acode-Style Mobile IDE & Plugin System)
+
+            Rilis resmi **NasCode** bergaya Acode: langsung masuk ke editor koding tanpa kewajiban login GitHub, sistem plugin JavaScript (Toko Plugin & Prettier), pratinjau web langsung (HTML, Markdown, JS) dengan konsol interaktif REPL, bilah simbol keyboard cepat, tema monokrom modern, dan logo resmi!
 
             > [!IMPORTANT]
             > **MIGRASI PEMASANGAN SEKALI TERAKHIR**:
             > Karena versi ini memperbarui Package Name menjadi `com.nascode.nanas` dan ditandatangani menggunakan **Keystore Sertifikat Permanen**, pengguna perlu **uninstall versi lama sekali terakhir**. Semua pembaruan APK berikutnya (baik debug maupun release) akan langsung menimpa tanpa perlu uninstall lagi.
 
             #### Pembaruan & Fitur Utama di v0.2.0:
-            1. **Integrasi Termux Nyata (RUN_COMMAND) & Zero Simulasi**:
-               - Menghapus seluruh log simulasi palsu. Eksekusi kode kini dilakukan secara nyata melalui Termux via `com.termux.RUN_COMMAND`.
-               - Tombol "Jalankan di Termux" mengirim intent eksekusi otomatis sesuai jenis proyek (`node file.js`, `python3 file.py`, `npm install && npm run dev -- --host`).
-               - Tombol "Buka Termux" untuk membuka aplikasi langsung atau tautan instalasi F-Droid / GitHub jika belum terpasang.
-               - Dukungan Folder Bersama di `/storage/emulated/0/NasCode/projects` (dengan opsi salin/pindah otomatis dari internal storage) agar Termux dapat membaca dan menulis proyek.
-            2. **Pencegahan React/Vite Layar Putih & WebView Console Log**:
-               - Memblokir pembukaan proyek React/Vite langsung via protokol `file://` (yang menyebabkan layar putih akibat modul ES) dan mengarahkan ke dev server / localhost preview.
-               - Dilengkapi panel ekspansi WebView Console Log yang menangkap error runtime JavaScript, peringatan, dan nomor baris agar penyebab layar putih langsung terlihat.
-            3. **Desain UI Monokrom & Blok Kode Berwarna**:
-               - Seluruh antarmuka menggunakan skema gelap monokrom bersih tanpa warna-warni berlebih.
-               - Kode editor CodeMirror menerapkan pewarnaan sintaks kaya warna bergaya VS Code Dark+.
-               - Seluruh emoji telah dihapus dan digantikan dengan logo resmi NasCode serta ikon antarmuka standar.
-            4. **Buka Repositori dengan Remote File Explorer**:
-               - Membuka repositori langsung menampilkan struktur pohon berkas remote (`GET /repos/{o}/{r}/contents`) dan pemilih branch (`GET /repos/{o}/{r}/branches`).
-               - Menampilkan pesan error asli dari API GitHub (kode status HTTP + pesan detail server).
-               - Menangani repositori kosong (HTTP 409/404) dengan status "Repo Kosong" yang informatif.
-            5. **Signing Keystore Permanen & Auto Version Code**:
+            1. **Langsung Koding Seperti Acode (Tanpa Login)**:
+               - Aplikasi langsung membuka layar editor koding seketika tanpa hambatan atau kewajiban login GitHub.
+               - Sidebar penjelajah berkas dengan opsi buka folder dari penyimpanan perangkat (SAF) atau template proyek siap pakai.
+            2. **Sistem Plugin JavaScript (Kompatibel Acode)**:
+               - Toko Plugin resmi (Marketplace) dengan dukungan pasang/copot sekali klik.
+               - Plugin bawaan: **Prettier Code Formatter**, **Auto Close Tag**, **Emmet HTML/CSS Expander**, **Color Picker & Inline Preview**, **Markdown Live Previewer**, **Interactive DevTools Console**, **Bracket Matcher**, dan **Code Snippets Pro**.
+               - Dukungan memasang skrip plugin JavaScript kustom dari URL atau teks kode.
+            3. **Pratinjau Web Langsung & Konsol Interaktif (REPL)**:
+               - Tombol Play langsung menjalankan pratinjau HTML, berkas Markdown (.md), atau script JS dengan aman di dalam WebView.
+               - Dilengkapi panel konsol pengembang interaktif (mencatat log, info, peringatan, dan error secara real-time) serta input bar REPL untuk mengevaluasi kode JavaScript secara langsung.
+            4. **Bilah Tombol Simbol Koding Cepat (Mobile Accessory Bar)**:
+               - Tombol akses cepat tepat di atas keyboard: `Tab`, `Undo`, `Redo`, `{}`, `()`, `[]`, `<>`, `/`, `;`, `=`, `"`, `'`, dll.
+            5. **Desain UI Monokrom & Blok Kode Berwarna**:
+               - Antarmuka elegan bertema *dark monochrome* (hitam, putih, abu-abu).
+               - Editor CodeMirror menerapkan pewarnaan sintaks *VS Code Dark+* yang kaya warna.
+            6. **Signing Keystore Permanen & Auto Version Code**:
                - Menggunakan keystore RSA-2048 permanen (berlaku hingga 2054) yang tersimpan aman di GitHub Secrets.
                - `versionCode` dinaikkan otomatis dari nomor run CI.
 

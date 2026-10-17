@@ -53,6 +53,10 @@ class WorkspaceViewModel @Inject constructor(
         }
     }
 
+    suspend fun getOrCreateDefaultWorkspace(): ProjectSource.LocalWorkspace {
+        return workspaceRepository.getOrCreateDefaultWorkspace()
+    }
+
     fun createWorkspace(name: String, templateId: String?) {
         viewModelScope.launch {
             workspaceRepository.createWorkspace(name, templateId)

@@ -303,6 +303,71 @@
         }
       };
 
+      // Plugin System Bridge
+      window.NasCodePlugins = {
+        registered: {},
+        register: function(id, pluginDef) {
+          this.registered[id] = pluginDef;
+          if (pluginDef && typeof pluginDef.init === 'function') {
+            try {
+              pluginDef.init(window);
+            } catch (e) {
+              console.error('Plugin init error [' + id + ']:', e);
+            }
+          }
+        },
+        getPlugin: function(id) {
+          return this.registered[id];
+        }
+      };
+
+      // Editor Configuration Methods
+      window.setFontSize = function(px) {
+        document.getElementById('highlighting').style.fontSize = px + 'px';
+        editing.style.fontSize = px + 'px';
+        gutter.style.fontSize = Math.max(10, px - 1) + 'px';
+        updateEditor();
+        syncScroll();
+      };
+
+      window.setWordWrap = function(wrap) {
+        if (wrap) {
+          document.getElementById('highlighting').style.whiteSpace = 'pre-wrap';
+          document.getElementById('highlighting').style.wordWrap = 'break-word';
+          editing.style.whiteSpace = 'pre-wrap';
+          editing.style.wordWrap = 'break-word';
+        } else {
+          document.getElementById('highlighting').style.whiteSpace = 'pre';
+          document.getElementById('highlighting').style.wordWrap = 'normal';
+          editing.style.whiteSpace = 'pre';
+          editing.style.wordWrap = 'normal';
+        }
+        updateEditor();
+        syncScroll();
+      };
+
+      window.setTabSize = function(size) {
+        editing.style.tabSize = size;
+        document.getElementById('highlighting').style.tabSize = size;
+      };
+
+      window.setShowLineNumbers = function(show) {
+        gutter.style.display = show ? 'block' : 'none';
+      };
+
+      window.formatCode = function() {
+        const prettier = window.NasCodePlugins.getPlugin('prettier-formatter');
+        if (prettier && typeof prettier.format === 'function') {
+          const formatted = prettier.format(editing.value, currentLanguage);
+          if (formatted && formatted !== editing.value) {
+            window.setEditorContent(formatted, currentLanguage);
+            if (window.AndroidBridge) {
+              window.AndroidBridge.onContentChanged(formatted);
+            }
+          }
+        }
+      };
+
       // Notify Android that editor is ready
       document.addEventListener('DOMContentLoaded', function() {
         saveHistory('');

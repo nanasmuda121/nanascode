@@ -29,7 +29,6 @@ import com.nanascode.app.feature.editor.EditorScreen
 import com.nanascode.app.feature.editor.EditorViewModel
 import com.nanascode.app.feature.repo.RepoListScreen
 import com.nanascode.app.feature.repo.RepoViewModel
-import com.nanascode.app.feature.workspace.WelcomeScreen
 import com.nanascode.app.feature.workspace.WorkspaceListScreen
 import com.nanascode.app.feature.workspace.WorkspaceViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -54,7 +53,7 @@ class MainActivity : ComponentActivity() {
                                 uri,
                                 Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                             )
-                            Toast.makeText(this@MainActivity, "Folder dipilih via SAF: ${uri.lastPathSegment}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@MainActivity, "Folder SAF dipilih: ${uri.lastPathSegment}", Toast.LENGTH_SHORT).show()
                         }
                     }
 
@@ -87,98 +86,38 @@ fun NasNavHost(
 ) {
     val navController = rememberNavController()
 
+    // Buka editor langsung seperti Acode (tanpa kewajiban login GitHub)
     NavHost(
         navController = navController,
-        startDestination = "welcome"
+        startDestination = "editor"
     ) {
-        // Layar Awal: Sambutan, Pilihan Login GitHub atau Lanjut Mode Lokal
-        composable("welcome") {
-            WelcomeScreen(
-                onLoginWithGitHubClick = {
-                    navController.navigate("auth")
-                },
-                onContinueOfflineClick = {
-                    navController.navigate("workspaces") {
-                        popUpTo("welcome") { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        // Layar Workspace Lokal & Offline-First Projects
-        composable("workspaces") {
+        // Layar Utama: Editor Koding Mobile (Langsung Terbuka seperti Acode)
+        composable("editor") {
+            val editorViewModel: EditorViewModel = hiltViewModel()
             val workspaceViewModel: WorkspaceViewModel = hiltViewModel()
-            WorkspaceListScreen(
-                viewModel = workspaceViewModel,
-                onOpenWorkspace = { workspace ->
-                    onStartForeground(workspace.name)
-                    val encoded = Uri.encode(workspace.rootPath)
-                    navController.navigate("editor/${workspace.name}/$encoded")
+
+            LaunchedEffect(Unit) {
+                val defaultWs = workspaceViewModel.getOrCreateDefaultWorkspace()
+                onStartForeground(defaultWs.name)
+                editorViewModel.initWorkspace(defaultWs.rootPath, defaultWs.name)
+            }
+
+            EditorScreen(
+                viewModel = editorViewModel,
+                onNavigateBack = {
+                    onStopForeground()
                 },
-                onNavigateToLogin = {
-                    navController.navigate("auth")
+                onOpenSafFolder = onOpenSafFolder,
+                onOpenWorkspaces = {
+                    navController.navigate("workspaces")
                 },
-                onNavigateToGitHubRepos = {
+                onOpenGitHub = {
                     navController.navigate("repos")
-                },
-                onImportFolderSaf = onOpenSafFolder
-            )
-        }
-
-        // Layar Login GitHub (Opsional)
-        composable("auth") {
-            val authViewModel: AuthViewModel = hiltViewModel()
-            LoginScreen(
-                viewModel = authViewModel,
-                onNavigateToRepos = {
-                    navController.navigate("workspaces") {
-                        popUpTo("auth") { inclusive = true }
-                    }
-                },
-                onNavigateBack = {
-                    navController.popBackStack()
                 }
             )
         }
 
-        // Layar Manajemen Repositori GitHub & File Explorer
-        composable("repos") {
-            val repoViewModel: RepoViewModel = hiltViewModel()
-            val workspaceViewModel: WorkspaceViewModel = hiltViewModel()
-            val scope = rememberCoroutineScope()
-
-            RepoListScreen(
-                viewModel = repoViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onSelectRepo = { repo ->
-                    onShowToast("Menyiapkan workspace untuk ${repo.name}...")
-                    scope.launch {
-                        val result = workspaceViewModel.cloneRemoteRepository(repo)
-                        result.onSuccess { ws ->
-                            onStartForeground(ws.name)
-                            val encoded = Uri.encode(ws.rootPath)
-                            navController.navigate("editor/${ws.name}/$encoded")
-                        }.onFailure { err ->
-                            onShowToast("Gagal menyiapkan repo: ${err.message}")
-                        }
-                    }
-                },
-                onNavigateToActions = { repo ->
-                    if (repo.isPrivate) {
-                        onShowToast("Fitur Actions hanya untuk repo publik")
-                    } else {
-                        onShowToast("Membuka GitHub Actions untuk ${repo.fullName} (Fitur F6)")
-                    }
-                },
-                onNavigateToLogin = {
-                    navController.navigate("auth")
-                }
-            )
-        }
-
-        // Layar Editor Koding Mobile (CodeMirror 6 WebView)
+        // Layar Editor dengan Path Workspace Tertentu
         composable(
             route = "editor/{workspaceName}/{rootPath}",
             arguments = listOf(
@@ -192,7 +131,10 @@ fun NasNavHost(
 
             val editorViewModel: EditorViewModel = hiltViewModel()
             LaunchedEffect(rootPath) {
-                editorViewModel.initWorkspace(rootPath, name)
+                if (rootPath.isNotBlank()) {
+                    onStartForeground(name)
+                    editorViewModel.initWorkspace(rootPath, name)
+                }
             }
 
             EditorScreen(
@@ -200,6 +142,90 @@ fun NasNavHost(
                 onNavigateBack = {
                     onStopForeground()
                     navController.popBackStack()
+                },
+                onOpenSafFolder = onOpenSafFolder,
+                onOpenWorkspaces = {
+                    navController.navigate("workspaces")
+                },
+                onOpenGitHub = {
+                    navController.navigate("repos")
+                }
+            )
+        }
+
+        // Layar Template Proyek & Workspace Manager (Bisa dibuka dari menu samping)
+        composable("workspaces") {
+            val workspaceViewModel: WorkspaceViewModel = hiltViewModel()
+            WorkspaceListScreen(
+                viewModel = workspaceViewModel,
+                onOpenWorkspace = { workspace ->
+                    onStartForeground(workspace.name)
+                    val encoded = Uri.encode(workspace.rootPath)
+                    navController.navigate("editor/${workspace.name}/$encoded") {
+                        popUpTo("editor") { inclusive = true }
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.navigate("auth")
+                },
+                onNavigateToGitHubRepos = {
+                    navController.navigate("repos")
+                },
+                onImportFolderSaf = onOpenSafFolder
+            )
+        }
+
+        // Layar Login GitHub (Opsional jika ingin clone / push ke GitHub)
+        composable("auth") {
+            val authViewModel: AuthViewModel = hiltViewModel()
+            LoginScreen(
+                viewModel = authViewModel,
+                onNavigateToRepos = {
+                    navController.navigate("repos") {
+                        popUpTo("auth") { inclusive = true }
+                    }
+                },
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Layar Manajemen Repositori GitHub (Opsional)
+        composable("repos") {
+            val repoViewModel: RepoViewModel = hiltViewModel()
+            val workspaceViewModel: WorkspaceViewModel = hiltViewModel()
+            val scope = rememberCoroutineScope()
+
+            RepoListScreen(
+                viewModel = repoViewModel,
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onSelectRepo = { repo ->
+                    onShowToast("Menyiapkan repositori ${repo.name}...")
+                    scope.launch {
+                        val result = workspaceViewModel.cloneRemoteRepository(repo)
+                        result.onSuccess { ws ->
+                            onStartForeground(ws.name)
+                            val encoded = Uri.encode(ws.rootPath)
+                            navController.navigate("editor/${ws.name}/$encoded") {
+                                popUpTo("editor") { inclusive = true }
+                            }
+                        }.onFailure { err ->
+                            onShowToast("Gagal menyiapkan repo: ${err.message}")
+                        }
+                    }
+                },
+                onNavigateToActions = { repo ->
+                    if (repo.isPrivate) {
+                        onShowToast("Fitur Actions hanya untuk repo publik")
+                    } else {
+                        onShowToast("GitHub Actions untuk ${repo.fullName}")
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.navigate("auth")
                 }
             )
         }

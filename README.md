@@ -18,17 +18,21 @@ NasCode adalah IDE / Code Editor mobile berkinerja tinggi untuk pengembang web, 
 
 ## Ringkasan Fitur Utama
 
-- **Mode Lokal Offline-First (Login GitHub Opsional)**:
-  - Layar awal menyediakan pilihan **"Lanjut Tanpa Login"** dan **"Masuk dengan GitHub"**.
-  - Koding, manajemen berkas, template proyek, dan git commit offline dapat digunakan sepenuhnya tanpa akun GitHub.
-  - Login dapat dilakukan kapan saja dari menu Akun atau saat mempublikasikan proyek ke GitHub.
-- **Integrasi Termux Nyata (Zero Output Simulasi)**:
-  - Eksekusi kode secara riil melalui `com.termux.RUN_COMMAND` untuk proyek Node.js (`node file.js`), Python (`python3 file.py`), dan React (`npm install && npm run dev -- --host`).
-  - Opsi folder proyek bersama di `/storage/emulated/0/NasCode/projects` dengan fitur salin/pindah otomatis dari penyimpanan internal aplikasi.
-  - Tombol pintas ke aplikasi Termux dan panduan konfigurasi `allow-external-apps=true`.
-- **Live Preview & Pencegahan Layar Putih React**:
-  - Pencegahan otomatis pemuatan file React/Vite secara mentah via `file://` (yang memicu layar putih karena modul ES) dengan instruksi menjalankan dev server.
-  - Panel WebView Console Log interaktif yang menampilkan pesan error JavaScript, peringatan, dan nomor baris berkas secara jelas.
+- **Langsung Koding Seperti Acode (Tanpa Login)**:
+  - Aplikasi langsung membuka layar editor koding seketika tanpa hambatan atau kewajiban login GitHub.
+  - Sidebar penjelajah berkas dengan opsi buka folder dari penyimpanan perangkat (SAF) atau template proyek siap pakai.
+  - Login GitHub sepenuhnya opsional dan hanya diperlukan jika pengguna ingin klon/publikasikan repositori remote.
+- **Sistem Plugin (Kompatibel Ekstensi Acode & JavaScript)**:
+  - **Toko Plugin Resmi (Marketplace)**: Pasang ekstensi sekali klik langsung di aplikasi.
+  - Pilihan plugin bawaan: **Prettier Code Formatter**, **Auto Close Tag**, **Emmet HTML/CSS**, **Color Picker & Inline Preview**, **Markdown Live Previewer**, **Interactive DevTools Console**, **Bracket Matcher**, dan **Code Snippets Pro**.
+  - **Pasang Plugin Kustom**: Dukungan memasang skrip plugin JavaScript kustom langsung dari URL atau teks kode.
+- **Pratinjau Web Langsung & Konsol Interaktif (Live Web Preview + REPL)**:
+  - Tombol Play langsung menjalankan pratinjau HTML, berkas Markdown (.md), atau script JS dengan aman di dalam WebView.
+  - Dilengkapi panel konsol pengembang interaktif (mencatat log, info, peringatan, dan error secara real-time) serta input bar REPL untuk mengevaluasi kode JavaScript secara langsung.
+- **Bilah Tombol Simbol Koding Cepat (Mobile Accessory Bar)**:
+  - Tombol akses cepat tepat di atas keyboard: `Tab`, `Undo`, `Redo`, `{}`, `()`, `[]`, `<>`, `/`, `;`, `=`, `"`, `'`, dll.
+- **Pengaturan Editor Fleksibel**:
+  - Pengaturan ukuran font (10px - 24px), ukuran indentasi tab (2 atau 4 spasi), bungkus baris (*word wrap*), dan nomor baris (*gutter*).
 - **Remote File Explorer GitHub**:
   - Membuka repositori remote menampilkan struktur pohon direktori (`GET /repos/{owner}/{repo}/contents`) dan pemilih branch (`GET /repos/{owner}/{repo}/branches`).
   - Penanganan pesan error asli dari GitHub API (kode HTTP + pesan server) dan status informatif untuk repositori kosong.
@@ -76,6 +80,6 @@ nascode/
     ├── workspace/        # Layar Sambutan, Manajemen Workspace Lokal, Folder Bersama
     ├── auth/             # Layar Login PAT, Validasi Scope, Multi-Akun
     ├── repo/             # Daftar Repo, Filter, Remote File Explorer, Branch Picker
-    ├── editor/           # Editor CodeMirror, TermuxManager, TerminalRunnerDialog, LivePreviewDialog
+    ├── editor/           # Editor CodeMirror, PluginManager, PluginManagerDialog, LivePreviewDialog, Settings
     └── actions/          # Modul F6 GitHub Actions (YAML parser, status runner)
 ```

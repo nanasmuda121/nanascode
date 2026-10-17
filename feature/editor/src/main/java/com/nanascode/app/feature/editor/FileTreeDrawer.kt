@@ -16,9 +16,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CreateNewFolder
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Extension
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.NoteAdd
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -37,9 +42,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.nanascode.app.core.ui.NasCodeLogo
 import com.nanascode.app.core.ui.theme.NanasDarkBorder
 import com.nanascode.app.core.ui.theme.NanasDarkSurface
 import com.nanascode.app.core.ui.theme.NanasDarkSurfaceLight
@@ -58,6 +65,11 @@ fun FileTreeDrawer(
     onCreateFile: (File, String) -> Unit,
     onCreateFolder: (File, String) -> Unit,
     onDeleteFile: (File) -> Unit,
+    onOpenFolderSaf: () -> Unit = {},
+    onOpenTemplates: () -> Unit = {},
+    onOpenPlugins: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
+    onOpenGitHub: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showCreateFileDialog by remember { mutableStateOf(false) }
@@ -70,9 +82,34 @@ fun FileTreeDrawer(
             .fillMaxHeight()
             .width(280.dp)
             .background(NanasDarkSurface)
-            .padding(vertical = 12.dp)
+            .padding(vertical = 8.dp)
     ) {
-        // Drawer Header
+        // App Branding Header (Acode Style)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            NasCodeLogo(modifier = Modifier.size(24.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "NasCode",
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                color = Color.White
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = "Editor",
+                fontSize = 13.sp,
+                color = NanasTextSecondary
+            )
+        }
+
+        HorizontalDivider(color = NanasDarkBorder, thickness = 0.8.dp)
+
+        // Section: File Explorer Header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -80,11 +117,11 @@ fun FileTreeDrawer(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "PENJELAJAH FILE",
+                text = "BERKAS PROYEK",
                 fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
+                fontSize = 11.sp,
                 color = NanasYellow,
-                letterSpacing = 1.sp,
+                letterSpacing = 0.8.sp,
                 modifier = Modifier.weight(1f)
             )
 
@@ -99,7 +136,7 @@ fun FileTreeDrawer(
                     imageVector = Icons.Default.NoteAdd,
                     contentDescription = "File Baru",
                     tint = NanasTextPrimary,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(17.dp)
                 )
             }
 
@@ -114,26 +151,26 @@ fun FileTreeDrawer(
                     imageVector = Icons.Default.CreateNewFolder,
                     contentDescription = "Folder Baru",
                     tint = NanasTextPrimary,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(17.dp)
                 )
             }
         }
 
-        HorizontalDivider(color = NanasDarkBorder, thickness = 1.dp)
-
-        Spacer(modifier = Modifier.height(8.dp))
-
         // File Tree List
         if (rootNode == null) {
             Box(
-                modifier = Modifier.fillMaxWidth().weight(1f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
                 Text("Memuat file...", color = NanasTextSecondary, fontSize = 13.sp)
             }
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxWidth().weight(1f)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
             ) {
                 item {
                     FileTreeItem(
@@ -147,6 +184,36 @@ fun FileTreeDrawer(
                 }
             }
         }
+
+        // Sidebar Navigation Actions (Acode Style Menu)
+        HorizontalDivider(color = NanasDarkBorder, thickness = 0.8.dp)
+        Spacer(modifier = Modifier.height(4.dp))
+
+        DrawerMenuItem(
+            icon = Icons.Default.FolderOpen,
+            label = "Buka Folder...",
+            onClick = onOpenFolderSaf
+        )
+        DrawerMenuItem(
+            icon = Icons.Default.Dashboard,
+            label = "Template Proyek",
+            onClick = onOpenTemplates
+        )
+        DrawerMenuItem(
+            icon = Icons.Default.Extension,
+            label = "Toko Plugin",
+            onClick = onOpenPlugins
+        )
+        DrawerMenuItem(
+            icon = Icons.Default.Settings,
+            label = "Pengaturan Editor",
+            onClick = onOpenSettings
+        )
+        DrawerMenuItem(
+            icon = Icons.Default.Cloud,
+            label = "GitHub Repositori",
+            onClick = onOpenGitHub
+        )
     }
 
     // Dialog Create File
@@ -193,15 +260,15 @@ fun FileTreeDrawer(
 
     // Dialog Create Folder
     if (showCreateFolderDialog && targetParentDir != null) {
-        var folderInput by remember { mutableStateOf("") }
+        var inputFolderName by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showCreateFolderDialog = false },
             title = { Text("Buat Folder Baru", color = NanasTextPrimary, fontWeight = FontWeight.Bold) },
             text = {
                 OutlinedTextField(
-                    value = folderInput,
-                    onValueChange = { folderInput = it },
-                    placeholder = { Text("components, assets, src...") },
+                    value = inputFolderName,
+                    onValueChange = { inputFolderName = it },
+                    placeholder = { Text("src, assets, css, components...") },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = NanasYellow,
@@ -213,7 +280,7 @@ fun FileTreeDrawer(
             confirmButton = {
                 Button(
                     onClick = {
-                        val name = folderInput.trim()
+                        val name = inputFolderName.trim()
                         if (name.isNotBlank()) {
                             onCreateFolder(targetParentDir!!, name)
                         }
@@ -233,16 +300,18 @@ fun FileTreeDrawer(
         )
     }
 
-    // Dialog Delete File
-    fileToDelete?.let { f ->
+    // Dialog Delete File Confirmation
+    fileToDelete?.let { file ->
         AlertDialog(
             onDismissRequest = { fileToDelete = null },
-            title = { Text("Hapus ${if (f.isDirectory) "Folder" else "File"}?", color = NanasTextPrimary, fontWeight = FontWeight.Bold) },
-            text = { Text("Yakin ingin menghapus permanent '${f.name}'?", color = NanasTextSecondary) },
+            title = { Text("Hapus ${if (file.isDirectory) "Folder" else "File"}?", color = NanasError, fontWeight = FontWeight.Bold) },
+            text = {
+                Text("Yakin ingin menghapus '${file.name}'? Tindakan ini tidak dapat dibatalkan.", color = NanasTextSecondary)
+            },
             confirmButton = {
                 Button(
                     onClick = {
-                        onDeleteFile(f)
+                        onDeleteFile(file)
                         fileToDelete = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = NanasError, contentColor = Color.White)
@@ -257,6 +326,25 @@ fun FileTreeDrawer(
             },
             containerColor = NanasDarkSurface
         )
+    }
+}
+
+@Composable
+private fun DrawerMenuItem(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(imageVector = icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(text = label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
     }
 }
 
