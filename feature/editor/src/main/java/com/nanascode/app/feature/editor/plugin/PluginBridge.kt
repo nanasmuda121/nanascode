@@ -16,7 +16,9 @@ class PluginBridge(
     private val onShowToast: (String) -> Unit,
     private val onRegisterCommand: (pluginId: String, commandId: String, title: String) -> Unit
 ) {
-    private const val TAG = "PluginBridge"
+    companion object {
+        private const val TAG = "PluginBridge"
+    }
 
     private fun checkPermission(pluginId: String, permission: String): Boolean {
         val plugin = PluginManager.installedPlugins.value.find { it.id == pluginId }
