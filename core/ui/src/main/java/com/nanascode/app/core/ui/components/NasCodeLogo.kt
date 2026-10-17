@@ -4,19 +4,14 @@ import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.nanascode.app.core.ui.R
-import com.nanascode.app.core.ui.theme.NanasTextPrimary
 import java.io.File
 
 /**
@@ -51,20 +46,11 @@ fun NasCodeLogo(
                 modifier = modifier
             )
         } else {
-            try {
-                Image(
-                    painter = painterResource(id = R.drawable.nascode_logo),
-                    contentDescription = contentDescription,
-                    modifier = modifier
-                )
-            } catch (_: Throwable) {
-                Icon(
-                    imageVector = Icons.Default.Code,
-                    contentDescription = contentDescription,
-                    tint = NanasTextPrimary,
-                    modifier = modifier
-                )
-            }
+            Image(
+                painter = painterResource(id = R.drawable.nascode_logo),
+                contentDescription = contentDescription,
+                modifier = modifier
+            )
         }
     }
 }
