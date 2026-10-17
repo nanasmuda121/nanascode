@@ -46,7 +46,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nanascode.app.core.ui.NasCodeLogo
+import com.nanascode.app.core.ui.components.NasCodeLogo
 import com.nanascode.app.core.ui.theme.NanasDarkBorder
 import com.nanascode.app.core.ui.theme.NanasDarkSurface
 import com.nanascode.app.core.ui.theme.NanasDarkSurfaceLight
