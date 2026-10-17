@@ -1,0 +1,15 @@
+NasCode (c) 2026 NasCode Contributors
+
+This project includes or adapts code from the following third-party projects:
+
+1. Acode (MIT License)
+   Copyright 2020 Foxdebug (Ajit Kumar)
+   Source: https://github.com/acode-foundation/acode
+   Used for:
+   - Terminal architecture (PRoot, Alpine Linux bootstrap scripts, and execution flow)
+   - Plugin manifest specifications and architecture inspiration
+   See LICENSE-ACODE.txt for full license text.
+
+2. @xterm/xterm and @xterm/addon-fit (MIT License)
+   Copyright (c) 2017-2024, The xterm.js authors
+   Used for terminal user interface in WebView.

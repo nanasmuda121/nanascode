@@ -82,8 +82,11 @@ import com.nanascode.app.core.ui.theme.NanasGreen
 import com.nanascode.app.core.ui.theme.NanasTextPrimary
 import com.nanascode.app.core.ui.theme.NanasTextSecondary
 import com.nanascode.app.core.ui.theme.NanasYellow
+import com.nanascode.app.feature.editor.plugin.PluginBridge
 import com.nanascode.app.feature.editor.plugin.PluginManager
 import com.nanascode.app.feature.editor.plugin.PluginManagerDialog
+import com.nanascode.app.feature.editor.terminal.TerminalDialog
+import java.io.File
 import kotlinx.coroutines.launch
 
 private val QUICK_SYMBOLS = listOf(
@@ -121,6 +124,10 @@ fun EditorScreen(
     var showPluginDialog by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
+    var showTerminal by remember { mutableStateOf(false) }
+    var terminalCommandToRun by remember { mutableStateOf<String?>(null) }
+    var terminalTitleToRun by remember { mutableStateOf<String?>(null) }
+    var previewLocalhostUrl by remember { mutableStateOf<String?>(null) }
     var editorConfig by remember { mutableStateOf(EditorConfig()) }
 
     val activeTab = remember(tabs, activeTabId) {
@@ -243,12 +250,27 @@ fun EditorScreen(
                         }
                     },
                     actions = {
-                        // Play Button: Pratinjau Web Langsung (Acode Style)
+                        // Tombol Run: Cek jenis proyek (HTML -> Web Preview, Node/Python/React -> Terminal)
                         IconButton(
-                            onClick = { showLivePreview = true },
+                            onClick = {
+                                if (workspacePath != null) {
+                                    val wsDir = File(workspacePath!!)
+                                    val activeFile = activeTab?.path?.let { File(it) }
+                                    val (type, defaultCmd) = ProjectTypeDetector.detect(wsDir, activeFile)
+
+                                    if (type == ProjectType.HTML_STATIC) {
+                                        previewLocalhostUrl = null
+                                        showLivePreview = true
+                                    } else {
+                                        terminalCommandToRun = defaultCmd
+                                        terminalTitleToRun = "${type.label} ($defaultCmd)"
+                                        showTerminal = true
+                                    }
+                                }
+                            },
                             enabled = workspacePath != null
                         ) {
-                            Icon(imageVector = Icons.Default.PlayArrow, contentDescription = "Pratinjau Web", tint = Color.White)
+                            Icon(imageVector = Icons.Default.PlayArrow, contentDescription = "Jalankan Proyek", tint = Color.White)
                         }
 
                         // Tombol Toko Plugin
@@ -475,6 +497,22 @@ fun EditorScreen(
                                         "AndroidBridge"
                                     )
 
+                                    addJavascriptInterface(
+                                        PluginBridge(
+                                            workspaceDirProvider = { workspacePath?.let { File(it) } },
+                                            onGetEditorContent = { activeTab?.content ?: "" },
+                                            onInsertEditorText = { text ->
+                                                val safeText = text.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
+                                                webViewRef?.evaluateJavascript("window.insertSymbol(`$safeText`);", null)
+                                            },
+                                            onShowToast = { msg ->
+                                                scope.launch { snackbarHostState.showSnackbar(msg) }
+                                            },
+                                            onRegisterCommand = { _, _, _ -> }
+                                        ),
+                                        "NasCodePluginBridge"
+                                    )
+
                                     webViewClient = object : WebViewClient() {
                                         override fun onPageFinished(view: WebView?, url: String?) {
                                             super.onPageFinished(view, url)
@@ -522,12 +560,30 @@ fun EditorScreen(
         }
     }
 
-    // Dialog: Live Web Preview (Acode Style)
+    // Dialog: Terminal Alpine PRoot Multi-Tab
+    if (showTerminal && workspacePath != null) {
+        TerminalDialog(
+            workspaceDir = File(workspacePath!!),
+            initialCommand = terminalCommandToRun,
+            initialTitle = terminalTitleToRun,
+            onDismiss = { showTerminal = false },
+            onOpenLocalhostPreview = { url ->
+                previewLocalhostUrl = url
+                showLivePreview = true
+            }
+        )
+    }
+
+    // Dialog: Live Web Preview
     if (showLivePreview && workspacePath != null) {
         LivePreviewDialog(
             workspaceRoot = workspacePath!!,
             activeFilePath = activeTab?.path,
-            onDismiss = { showLivePreview = false }
+            previewUrl = previewLocalhostUrl,
+            onDismiss = {
+                showLivePreview = false
+                previewLocalhostUrl = null
+            }
         )
     }
 

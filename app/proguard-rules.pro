@@ -36,11 +36,14 @@
 }
 -keep class com.nanascode.app.core.model.** { *; }
 
-# Keep CodeMirror WebView JavaScript Interface
+# Keep CodeMirror, Terminal, and Plugin WebView JavaScript Interfaces
 -keepclassmembers class * {
     @android.webkit.JavascriptInterface <methods>;
 }
 -keep class com.nanascode.app.feature.editor.EditorJsBridge { *; }
+-keep class com.nanascode.app.core.terminal.** { *; }
+-keep class com.nanascode.app.feature.editor.plugin.** { *; }
+-keep class com.nanascode.app.feature.editor.terminal.** { *; }
 
 # Eclipse JGit & SSH/HTTP Transports
 -dontwarn org.eclipse.jgit.**

@@ -13,6 +13,7 @@ data class NasCodePlugin(
     val category: String = "Utility",
     val isInstalled: Boolean = false,
     val isEnabled: Boolean = true,
+    val permissions: List<String> = emptyList(),
     val jsCode: String = "",
     val cssCode: String = "",
     val settingsSchema: String? = null,

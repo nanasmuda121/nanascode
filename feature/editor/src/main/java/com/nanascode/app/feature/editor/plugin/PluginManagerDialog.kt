@@ -49,9 +49,13 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
-import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material.icons.filled.FolderZip
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -91,9 +95,33 @@ fun PluginManagerDialog(
         PluginManager.getMarketplaceCatalog()
     }
 
+    val context = LocalContext.current
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
     var showCustomInstallDialog by remember { mutableStateOf(false) }
+    var pendingZipUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingManifest by remember { mutableStateOf<NasCodePluginManifest?>(null) }
+    var installErrorMessage by remember { mutableStateOf<String?>(null) }
+
+    val zipPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    val res = PluginManager.inspectZipManifest(stream)
+                    res.onSuccess { manifest ->
+                        pendingZipUri = uri
+                        pendingManifest = manifest
+                    }.onFailure { err ->
+                        installErrorMessage = err.message ?: "Berkas ZIP plugin tidak valid"
+                    }
+                }
+            } catch (e: Exception) {
+                installErrorMessage = e.message ?: "Gagal membaca berkas ZIP"
+            }
+        }
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -124,7 +152,7 @@ fun PluginManagerDialog(
                                     )
                                 }
                                 Text(
-                                    text = "Kompatibel dengan ekstensi Acode & JavaScript",
+                                    text = "Ekstensi & Plugin JavaScript NasCode",
                                     fontSize = 11.sp,
                                     color = NanasTextSecondary
                                 )
@@ -140,6 +168,15 @@ fun PluginManagerDialog(
                             }
                         },
                         actions = {
+                            // Pasang dari berkas ZIP lokal
+                            IconButton(onClick = { zipPickerLauncher.launch("application/zip") }) {
+                                Icon(
+                                    imageVector = Icons.Default.FolderZip,
+                                    contentDescription = "Pasang dari Berkas ZIP",
+                                    tint = Color.White
+                                )
+                            }
+                            // Pasang kustom dari script JS
                             IconButton(onClick = { showCustomInstallDialog = true }) {
                                 Icon(
                                     imageVector = Icons.Default.Add,
@@ -325,6 +362,103 @@ fun PluginManagerDialog(
                 showCustomInstallDialog = false
                 onPluginsChanged()
             }
+        )
+    }
+
+    // Dialog Konfirmasi Izin Plugin dari Berkas ZIP
+    pendingManifest?.let { manifest ->
+        AlertDialog(
+            onDismissRequest = {
+                pendingManifest = null
+                pendingZipUri = null
+            },
+            title = {
+                Text("Konfirmasi Pemasangan Plugin", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            },
+            text = {
+                Column {
+                    Text(text = "${manifest.name} (v${manifest.version})", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    if (manifest.description.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = manifest.description, color = NanasTextSecondary, fontSize = 12.sp)
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(text = "Izin yang diminta:", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    if (manifest.permissions.isEmpty()) {
+                        Text(text = "• Plugin ini tidak meminta izin khusus.", color = NanasGreen, fontSize = 12.sp)
+                    } else {
+                        for (perm in manifest.permissions) {
+                            Text(
+                                text = "• ${PluginPermissions.describe(perm)}",
+                                color = NanasYellow,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val uri = pendingZipUri
+                        if (uri != null) {
+                            try {
+                                context.contentResolver.openInputStream(uri)?.use { stream ->
+                                    val res = PluginManager.installFromZip(stream)
+                                    res.onSuccess {
+                                        onPluginsChanged()
+                                    }.onFailure { err ->
+                                        installErrorMessage = err.message ?: "Gagal memasang plugin"
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                installErrorMessage = e.message ?: "Kesalahan saat membaca ZIP"
+                            }
+                        }
+                        pendingManifest = null
+                        pendingZipUri = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Izinkan & Pasang", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = {
+                        pendingManifest = null
+                        pendingZipUri = null
+                    },
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Batal", color = NanasTextPrimary)
+                }
+            },
+            containerColor = NanasDarkSurface,
+            shape = RoundedCornerShape(14.dp)
+        )
+    }
+
+    // Dialog Pesan Error Pemasangan
+    installErrorMessage?.let { errMsg ->
+        AlertDialog(
+            onDismissRequest = { installErrorMessage = null },
+            title = { Text("Pemasangan Gagal", color = NanasError, fontWeight = FontWeight.Bold) },
+            text = { Text(text = errMsg, color = NanasTextSecondary, fontSize = 13.sp) },
+            confirmButton = {
+                Button(
+                    onClick = { installErrorMessage = null },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Tutup")
+                }
+            },
+            containerColor = NanasDarkSurface,
+            shape = RoundedCornerShape(14.dp)
         )
     }
 }

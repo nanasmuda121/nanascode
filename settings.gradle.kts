@@ -36,6 +36,7 @@ include(":core:database")
 include(":core:datastore")
 include(":core:git")
 include(":core:ui")
+include(":core:terminal")
 
 // Feature modules
 include(":feature:auth")

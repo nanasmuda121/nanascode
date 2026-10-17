@@ -106,6 +106,7 @@ dependencies {
     implementation(project(":core:datastore"))
     implementation(project(":core:git"))
     implementation(project(":core:ui"))
+    implementation(project(":core:terminal"))
 
     implementation(project(":feature:workspace"))
     implementation(project(":feature:editor"))

@@ -39,6 +39,7 @@ dependencies {
     implementation(project(":core:security"))
     implementation(project(":core:git"))
     implementation(project(":core:ui"))
+    implementation(project(":core:terminal"))
     implementation(libs.kotlinx.serialization.json)
 
     // Compose

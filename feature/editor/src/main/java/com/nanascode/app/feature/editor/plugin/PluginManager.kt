@@ -33,6 +33,7 @@ object PluginManager {
             category = "Formatter",
             isInstalled = true,
             isEnabled = true,
+            permissions = listOf(PluginPermissions.EDITOR_READ, PluginPermissions.EDITOR_WRITE),
             jsCode = """
                 window.NasCodePlugins.register('prettier-formatter', {
                     name: 'Prettier Formatter',
@@ -323,6 +324,28 @@ object PluginManager {
     }
 
     /**
+     * Memeriksa manifest ZIP plugin sebelum pemasangan
+     */
+    fun inspectZipManifest(zipStream: java.io.InputStream): Result<NasCodePluginManifest> {
+        return PluginZipInstaller.inspectManifest(zipStream)
+    }
+
+    /**
+     * Pasang plugin dari berkas ZIP lokal
+     */
+    fun installFromZip(zipStream: java.io.InputStream): Result<NasCodePlugin> {
+        val dir = storageDir ?: return Result.failure(IllegalStateException("Direktori plugin belum diinisialisasi"))
+        val result = PluginZipInstaller.installFromZip(zipStream, dir)
+        result.onSuccess { installed ->
+            _installedPlugins.update { current ->
+                current.filterNot { it.id == installed.id } + installed
+            }
+            saveInstalledPlugins(_installedPlugins.value)
+        }
+        return result
+    }
+
+    /**
      * Hapus instalasi plugin
      */
     fun uninstallPlugin(pluginId: String): Result<Unit> {
@@ -330,6 +353,10 @@ object PluginManager {
             current.filterNot { it.id == pluginId }
         }
         saveInstalledPlugins(_installedPlugins.value)
+        // Also remove directory on disk if exists
+        storageDir?.let { dir ->
+            File(dir, pluginId).deleteRecursively()
+        }
         return Result.success(Unit)
     }
 
@@ -351,12 +378,46 @@ object PluginManager {
     fun getActivePluginsJs(): String {
         val active = _installedPlugins.value.filter { it.isEnabled }
         return buildString {
-            append("// NasCode Plugin Runtime Injection\n")
+            append("// NasCode Plugin Runtime & Sandboxed API\n")
+            append("""
+                window.NasCode = window.NasCode || {};
+                window.NasCode.createPluginContext = function(pluginId) {
+                  return {
+                    editor: {
+                      getText: function() { return window.NasCodePluginBridge ? window.NasCodePluginBridge.getEditorText(pluginId) : ''; },
+                      insertText: function(text) { if (window.NasCodePluginBridge) window.NasCodePluginBridge.insertEditorText(pluginId, text); },
+                      getSelectedText: function() { return window.getSelectionText ? window.getSelectionText() : ''; },
+                      setCursor: function(l, c) { if (window.setCursorPos) window.setCursorPos(l, c); }
+                    },
+                    file: {
+                      readFile: function(path) { return window.NasCodePluginBridge ? window.NasCodePluginBridge.readFile(pluginId, path) : ''; },
+                      writeFile: function(path, content) { return window.NasCodePluginBridge ? window.NasCodePluginBridge.writeFile(pluginId, path, content) : false; }
+                    },
+                    command: {
+                      register: function(cmdId, title, callback) {
+                        window.NasCodeCommandRegistry = window.NasCodeCommandRegistry || {};
+                        window.NasCodeCommandRegistry[pluginId + ':' + cmdId] = callback;
+                        if (window.NasCodePluginBridge) window.NasCodePluginBridge.registerCommand(pluginId, cmdId, title);
+                      }
+                    },
+                    notification: {
+                      showToast: function(msg) { if (window.NasCodePluginBridge) window.NasCodePluginBridge.showToast(pluginId, msg); },
+                      showAlert: function(title, msg) { alert(title + '\n' + msg); }
+                    }
+                  };
+                };
+            """.trimIndent())
+            append("\n")
+
             for (p in active) {
                 append("try {\n")
-                append("// Plugin: ${p.name} (v${p.version})\n")
-                append(p.jsCode)
-                append("\n} catch(e) { console.error('Error loading plugin [${p.id}]:', e); }\n")
+                append("// Plugin: ${p.name} (v${p.version}) [${p.id}]\n")
+                append("(function() {\n")
+                append("  const ctx = window.NasCode.createPluginContext('${p.id}');\n")
+                append("  ${p.jsCode}\n")
+                append("  if (typeof init === 'function') { init(ctx); }\n")
+                append("})();\n")
+                append("} catch(e) { console.error('Error loading plugin [${p.id}]:', e); }\n")
             }
         }
     }
